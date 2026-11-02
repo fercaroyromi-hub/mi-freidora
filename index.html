@@ -3,534 +3,904 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2E7A4E">
+<title>Mi Freidora</title>
+<meta name="theme-color" content="#F7F1E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1814" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mi Freidora">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Mi Freidora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: app de una columna, barra de pestañas fija abajo, fichas como hojas de cocina */
+/* Concepto: cocina de casa ordenada. Fondo arena tibio, verde albahaca como guía, azafrán para el calor de la freidora.
+   Celular: barra inferior. Tablet/compu: menú lateral y grilla de recetas; la receta se abre en un panel. */
 :root{
-  --bg:#F3F6F1; --surface:#FFFFFF; --ink:#1C2620; --muted:#5D6B62; --line:#DDE5DC;
-  --basil:#2E7A4E; --basil-soft:#E1F0E5; --heat:#D9861C; --heat-soft:#FBEBD3; --danger:#B3412E;
-  --display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
-  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --bg:#F7F1E8; --bg2:#EFE6D9; --surface:#FFFCF8; --ink:#2B241E; --muted:#776A5D; --line:#E6DACB;
+  --basil:#3D6A47; --basil-ink:#FFFFFF; --basil-soft:#E3EDE2;
+  --saffron:#D98E1F; --saffron-soft:#FBEBD0; --tomato:#C2452D; --tomato-soft:#F8E1DA;
+  --shadow:0 1px 2px rgba(60,40,20,.06),0 6px 20px rgba(60,40,20,.07);
+  --display:"Bricolage Grotesque",ui-rounded,"Segoe UI",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:16px; color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#111713; --surface:#1A221D; --ink:#E5EDE7; --muted:#9AAAA0; --line:#2B362F;
-  --basil:#6CC08E; --basil-soft:#1E3427; --heat:#F0B05A; --heat-soft:#3A2A14; --danger:#E7836F; color-scheme:dark}}
+  --bg:#1C1814; --bg2:#25201B; --surface:#29231D; --ink:#F2EADF; --muted:#B4A697; --line:#3B332B;
+  --basil:#8DC59A; --basil-ink:#14261A; --basil-soft:#23362A; --saffron:#F0B256; --saffron-soft:#3D2D16;
+  --tomato:#EE8A73; --tomato-soft:#43251E; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#111713; --surface:#1A221D; --ink:#E5EDE7; --muted:#9AAAA0; --line:#2B362F;
-  --basil:#6CC08E; --basil-soft:#1E3427; --heat:#F0B05A; --heat-soft:#3A2A14; --danger:#E7836F; color-scheme:dark}
+  --bg:#1C1814; --bg2:#25201B; --surface:#29231D; --ink:#F2EADF; --muted:#B4A697; --line:#3B332B;
+  --basil:#8DC59A; --basil-ink:#14261A; --basil-soft:#23362A; --saffron:#F0B256; --saffron-soft:#3D2D16;
+  --tomato:#EE8A73; --tomato-soft:#43251E; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0}[hidden]{display:none!important}img{max-width:100%}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px calc(96px + env(safe-area-inset-bottom,0px))}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-h1{font-family:var(--display);font-weight:800;font-size:1.7rem;letter-spacing:-.02em;margin:0;line-height:1}
-h1 span{color:var(--heat)}
-.sub{color:var(--muted);font-size:.85rem}
-h2{font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:-.01em;margin:6px 0 4px;text-wrap:balance}
-p.lead{margin:0 0 14px;color:var(--muted)}
-.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
-button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible{outline:3px solid var(--heat);outline-offset:2px}
-/* chips */
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-weight:600;font-size:.92rem}
-.chip[aria-pressed="true"]{background:var(--basil);border-color:var(--basil);color:var(--bg)}
-.chip.small{padding:4px 10px;font-size:.8rem}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{border:none;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--basil);color:var(--bg)}
-.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
-.btn.heat{background:var(--heat);color:#1C1406}
-.btn.sm{padding:7px 11px;font-size:.85rem;border-radius:10px}
-/* recipe list */
-.list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-.rc{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left;width:100%}
-.dial{width:62px;height:62px;border-radius:50%;border:3px solid var(--heat);display:grid;place-items:center;text-align:center;line-height:1.05;font-variant-numeric:tabular-nums}
-.dial b{font-family:var(--display);font-size:1.05rem}
-.dial small{font-size:.7rem;color:var(--muted);font-weight:600}
-.rc .t{font-weight:700;font-size:1rem;min-width:0}
-.rc .m{font-size:.82rem;color:var(--muted);margin-top:2px}
-.have{font-size:.8rem;font-weight:700;color:var(--basil)}
-.miss{font-size:.8rem;color:var(--muted)}
-.fav{border:none;background:none;font-size:1.3rem;line-height:1;padding:6px;color:var(--muted)}
-.fav[aria-pressed="true"]{color:var(--danger)}
-.search{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
-.empty{padding:22px;border:1.5px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;margin-top:14px}
-/* week */
-.day{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.day h3{margin:0;font-family:var(--display);font-size:1.05rem;display:flex;justify-content:space-between;align-items:center}
-.slot{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
-.slot .tag{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--basil-soft);color:var(--basil)}
-.slot .tag.s{background:var(--heat-soft);color:var(--heat)}
-.slot .nm{border:none;background:none;text-align:left;padding:0;font-weight:600;min-width:0}
-.swap{border:1px solid var(--line);background:transparent;border-radius:8px;padding:4px 8px;font-size:.8rem;color:var(--muted)}
-.note{background:var(--basil-soft);border-radius:14px;padding:12px 14px;font-size:.9rem;margin:14px 0}
-.shop label{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
-.shop input{margin-top:4px;accent-color:var(--basil);width:18px;height:18px}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--saffron);outline-offset:2px;border-radius:8px}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.015em;line-height:1.15;text-wrap:balance;margin:0}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---- estructura ---- */
+.app{min-height:100%;display:flex}
+.side{display:none}
+.main{flex:1;min-width:0}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(104px + env(safe-area-inset-bottom,0px))}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.35rem}
+.brand .logo{width:36px;height:36px;border-radius:11px;background:var(--basil);display:grid;place-items:center}
+.brand .logo svg{width:22px;height:22px;color:var(--basil-ink)}
+.brand span b{color:var(--saffron)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:12px;height:42px;padding:0 12px;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem}
+.iconbtn svg{width:20px;height:20px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:12px;color:var(--muted);font-size:.72rem;font-weight:600}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--basil)}
+.tab[aria-current="page"] svg{background:var(--basil-soft);border-radius:999px;padding:2px 14px;width:52px;box-sizing:content-box;margin:0 -14px}
+@media (min-width:900px){
+  .side{display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;width:240px;flex:none;padding:22px 14px;border-right:1px solid var(--line);background:var(--bg2)}
+  .side .brand{padding:0 8px 18px}
+  .side .tab{flex-direction:row;justify-content:flex-start;gap:12px;font-size:.98rem;padding:11px 12px;color:var(--ink)}
+  .side .tab[aria-current="page"]{background:var(--surface);box-shadow:var(--shadow);color:var(--basil)}
+  .side .tab[aria-current="page"] svg{background:none;padding:0;width:24px;margin:0}
+  .side .spacer{flex:1}
+  nav.tabs{display:none}
+  .topbar .brand{display:none}
+  .topbar{justify-content:flex-end;margin-bottom:12px}
+  .wrap{padding-block:28px 48px;padding-left:36px;padding-right:36px}
+}
+
+/* ---- piezas ---- */
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.lead{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.h1{font-size:clamp(1.7rem,4.6vw,2.4rem);font-weight:800}
+.h2{font-size:1.3rem;font-weight:800}
+.section{margin-top:28px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.link{border:0;background:none;color:var(--basil);font-weight:700;padding:4px 0}
+.search{position:relative}
+.search input{width:100%;height:54px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);padding:0 16px 0 48px;font-size:1.02rem;box-shadow:var(--shadow)}
+.search input:focus{outline:none;border-color:var(--basil)}
+.search svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:22px;height:22px;color:var(--muted);pointer-events:none}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 2px 6px;margin:0 -2px}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrapit{flex-wrap:wrap;overflow:visible}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.9rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--basil);border-color:var(--basil);color:var(--basil-ink)}
+.chip .c{opacity:.7;font-weight:500;margin-left:4px}
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:700;background:var(--basil);color:var(--basil-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn svg{width:20px;height:20px}
+.btn.heat{background:var(--saffron);color:#24170A}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.sm{padding:8px 12px;border-radius:11px;font-size:.88rem}
+.btn[disabled]{opacity:.55}
+
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.qa{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 12px;text-align:left;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);min-width:0}
+.qa .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center}
+.qa .ic svg{width:22px;height:22px}
+.qa b{font-size:.95rem;line-height:1.2}
+.qa span{font-size:.8rem;color:var(--muted);line-height:1.25}
+@media (max-width:420px){.qa{padding:12px 10px}.qa span{display:none}}
+
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cat{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;min-width:0}
+@media (min-width:900px){.cats{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}.cat{flex-direction:row;align-items:center;gap:12px}}
+.cat .ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center}
+.cat .ic svg{width:22px;height:22px}
+.cat b{display:block;font-size:.95rem;line-height:1.2}
+.cat small{color:var(--muted);font-size:.8rem}
+
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1180px){.grid{grid-template-columns:repeat(3,1fr)}}
+.card{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 14px 12px 14px;display:flex;gap:12px;text-align:left;min-width:0;box-shadow:var(--shadow);transition:transform .12s ease;cursor:pointer}
+.card:active{transform:scale(.99)}
+.card .ic{width:44px;height:44px;flex:none;border-radius:13px;display:grid;place-items:center}
+.card .ic svg{width:24px;height:24px}
+.card .body{min-width:0;flex:1}
+.card .t{font-weight:700;font-size:1rem;line-height:1.25;padding-right:30px}
+.card .m{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px;color:var(--muted);font-size:.82rem}
+.card .m span{display:inline-flex;align-items:center;gap:4px}
+.card .m svg{width:15px;height:15px}
+.card .extra{margin-top:6px;font-size:.82rem;font-weight:600}
+.have{color:var(--basil)} .miss{color:var(--muted)}
+.fav{position:absolute;top:8px;right:8px;border:0;background:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--muted)}
+.fav svg{width:22px;height:22px}
+.fav[aria-pressed="true"]{color:var(--tomato)}
+.fav[aria-pressed="true"] svg{fill:currentColor}
+.hscroll{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,80%);gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.hscroll::-webkit-scrollbar{display:none}
+@media (min-width:900px){.hscroll{grid-auto-columns:minmax(260px,32%)}}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:26px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-family:var(--display);font-size:1.15rem;margin-bottom:6px}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--saffron-soft);border-radius:var(--r);padding:12px 14px;margin-top:14px;font-size:.92rem}
+.hero{background:linear-gradient(135deg,var(--basil-soft),transparent 70%);border-radius:22px;padding:20px 18px;margin:0 -2px}
+.welcome{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px 20px;box-shadow:var(--shadow);margin-top:18px}
+.welcome ol{padding-left:20px;color:var(--muted)}
+
+/* viandas */
+.week{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:760px){.week{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1180px){.week{grid-template-columns:repeat(3,1fr)}}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.day.today{border-color:var(--basil);box-shadow:0 0 0 2px var(--basil-soft),var(--shadow)}
+.day h3{font-size:1.05rem;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pill{font-family:var(--body);font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--basil-soft);color:var(--basil);display:inline-block}
+.pill.s{background:var(--saffron-soft);color:var(--saffron)}
+.slot{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.slot .nm{border:0;background:none;text-align:left;padding:0;min-width:0}
+.slot .nm b{display:block;font-weight:700;line-height:1.25;margin-top:6px}
+.slot .nm small{color:var(--muted)}
+.swap{border:1px solid var(--line);background:transparent;border-radius:10px;padding:6px 10px;font-size:.8rem;color:var(--muted);display:inline-flex;gap:4px;align-items:center}
+.swap svg{width:15px;height:15px}
+.note{background:var(--basil-soft);border-radius:var(--r);padding:14px 16px;font-size:.92rem;margin-top:16px}
+.shop{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 14px}
+.shop label{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.shop label:last-child{border-bottom:0}
+.shop input{margin-top:3px;width:20px;height:20px;accent-color:var(--basil);flex:none}
 .shop .done{text-decoration:line-through;color:var(--muted)}
-/* tabs */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
-nav.tabs button{border:none;background:none;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.75rem;font-weight:600;color:var(--muted)}
-nav.tabs button svg{width:24px;height:24px}
-nav.tabs button[aria-current="page"]{color:var(--basil)}
-/* sheet */
-.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px)}
-.sheet .wrap{padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
-.back{border:none;background:none;font-weight:700;color:var(--basil);padding:14px 0}
-.heatbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.heatbar div{background:var(--heat-soft);border-radius:14px;padding:12px;text-align:center}
-.heatbar b{display:block;font-family:var(--display);font-size:2rem;color:var(--heat);font-variant-numeric:tabular-nums;line-height:1.1}
-ul.ing{padding-left:20px;margin:6px 0 14px}
-ul.ing li{padding:3px 0}
-ol.steps{padding-left:22px;margin:6px 0 14px}
-ol.steps li{padding:5px 0}
-.tip{border-left:3px solid var(--heat);padding:4px 0 4px 12px;color:var(--muted);font-size:.92rem}
-/* timer */
-.timer{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));text-align:center}
-.ring{width:min(72vw,280px);aspect-ratio:1;max-width:100%;position:relative}
+
+/* heladera */
+.group{margin-top:14px}
+.group .eyebrow{margin-bottom:8px}
+
+/* ficha */
+.sheet{position:fixed;inset:0;z-index:40;display:flex;justify-content:flex-end}
+.sheet .scrim{position:absolute;inset:0;background:rgba(20,12,4,.45)}
+.sheet .panel{position:relative;width:100%;height:100%;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;
+  padding:calc(8px + env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));animation:up .22s ease}
+@media (min-width:900px){.sheet .panel{width:min(720px,92vw);border-radius:22px 0 0 22px;padding:20px 36px 48px;animation:left .22s ease}}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes left{from{transform:translateX(30px);opacity:.4}to{transform:none;opacity:1}}
+.sheet .ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center}
+.sheet .ic svg{width:22px;height:22px}
+.sheetbar{position:sticky;top:calc(-8px - env(safe-area-inset-top,0px));z-index:2;display:flex;justify-content:space-between;align-items:center;padding:8px 0;background:var(--bg);margin-bottom:6px}
+.back{border:0;background:none;font-weight:700;color:var(--basil);padding:8px 0;display:inline-flex;align-items:center;gap:4px}
+.back svg{width:22px;height:22px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;min-width:0}
+.stat b{display:block;font-family:var(--display);font-size:1.45rem;color:var(--saffron);line-height:1.1;overflow-wrap:anywhere}
+.stat span{font-size:.76rem;color:var(--muted)}
+.stat.off b{color:var(--muted);font-size:1.05rem}
+.ing{list-style:none;padding:0;margin:8px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.ing li{border-bottom:1px solid var(--line)}
+.ing li:last-child{border-bottom:0}
+.ing label{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;cursor:pointer}
+.ing input{width:20px;height:20px;margin-top:2px;accent-color:var(--basil);flex:none}
+.ing input:checked+span{color:var(--muted);text-decoration:line-through}
+.ing .sub{font-weight:700;padding:10px 14px 4px;color:var(--muted);font-size:.85rem}
+.steps{list-style:none;padding:0;margin:8px 0 0;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--basil-soft);color:var(--basil);font-weight:800;font-size:.9rem}
+.steps li.done{color:var(--muted)}
+.steps li.done::before{content:"✓";background:var(--basil);color:var(--basil-ink)}
+.box{border-radius:14px;padding:12px 14px;margin-top:12px;font-size:.94rem}
+.box.tip{background:var(--saffron-soft)}
+.box.warn{background:var(--tomato-soft)}
+.box b{display:block;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.meta-line{color:var(--muted);font-size:.85rem;margin-top:14px}
+
+/* libros */
+.book{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.book .bt{min-width:0}
+.book b{display:block;line-height:1.25}
+.book small{color:var(--muted)}
+.bar{height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--saffron);width:0;transition:width .3s}
+
+/* temporizador */
+.timer{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(18px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.ring{width:min(70vw,300px);aspect-ratio:1;max-width:100%;position:relative}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ring .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:3.4rem;font-weight:800;font-variant-numeric:tabular-nums}
-.alert{background:var(--heat);color:#1C1406;font-weight:800;border-radius:12px;padding:10px 16px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(2.6rem,12vw,3.8rem);font-weight:800}
+.alert{background:var(--saffron);color:#24170A;font-weight:800;border-radius:14px;padding:12px 18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:70;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:.9rem;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+@media (min-width:900px){.toast{bottom:28px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-
-<div class="wrap">
-  <header class="top">
-    <h1>Mi <span>Freidora</span></h1>
-    <button class="btn ghost sm" data-libros id="count">Mis libros</button>
-  </header>
-  <main id="view"></main>
+<div class="app">
+  <aside class="side" aria-label="Menú">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="4"/><rect x="8" y="11" width="8" height="6" rx="1.5"/><circle cx="12" cy="7" r="1.4" fill="currentColor"/></svg></div><span>Mi <b>Freidora</b></span></div>
+    <div id="sidetabs"></div>
+    <div class="spacer"></div>
+    <button class="tab" data-libros><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg>Mis libros</button>
+  </aside>
+  <div class="main">
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="4"/><rect x="8" y="11" width="8" height="6" rx="1.5"/><circle cx="12" cy="7" r="1.4" fill="currentColor"/></svg></div><span>Mi <b>Freidora</b></span></div>
+        <button class="iconbtn" data-libros aria-label="Mis libros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg><span id="libcount">Libros</span></button>
+      </div>
+      <main id="view"></main>
+    </div>
+  </div>
 </div>
-
-<nav class="tabs" aria-label="Secciones"><div class="in">
-  <button data-tab="heladera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14M9 6v1M9 13v3"/></svg>Heladera</button>
-  <button data-tab="vianda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M8 8V6a4 4 0 0 1 8 0v2M3 13h18"/></svg>Vianda</button>
-  <button data-tab="recetas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h6"/></svg>Recetas</button>
-  <button data-tab="favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Favoritas</button>
-</div></nav>
-
-<div class="sheet" id="sheet" hidden></div>
+<nav class="tabs" aria-label="Secciones"><div class="in" id="bottomtabs"></div></nav>
+<div class="sheet" id="sheet" hidden><div class="scrim" data-close></div><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
 <div class="timer" id="timer" hidden></div>
+<div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script>
-/* Recetas del libro "1000 Recetas Uruguay para freidora de aire" (Partes I y II), resumidas.
-   [id, nombre, categoría, °C, minutos, vianda(m=comida,s=colación,''=no), proteína, ingredientes(|), pasos(|), tip, darVuelta] */
-const RAW=[];
-const BUILTIN=RAW.map(r=>({id:r[0],n:r[1],c:r[2],t:r[3],m:r[4],v:r[5],p:r[6],i:r[7].split("|"),s:r[8].split("|"),tip:r[9],flip:!!r[10]}));
-let R=BUILTIN.slice(),BYID={};
-
-/* ingredientes de la heladera */
-const ING=[
-["pollo",/pollo|pechuga|suprema|muslo/],["carne picada",/carne picada|carne magra picada/],["carne",/(filetes? de carne|bife|carne en tiritas|cuadril|nalga)/],
-["merluza",/merluza/],["atún",/at[uú]n/],["salmón",/salm[oó]n/],["huevo",/huevo/],["queso",/queso/],["ricota",/ricota/],["jamón",/jam[oó]n/],
-["papa",/\bpapas?\b/],["batata",/batata/],["zapallito",/zapallito/],["calabaza",/calabaza|zapallo/],["zanahoria",/zanahoria/],["espinaca",/espinaca/],
-["acelga",/acelga/],["brócoli",/br[oó]coli/],["berenjena",/berenjena/],["cebolla",/cebolla/],["morrón",/morr[oó]n/],["tomate",/tomate/],
-["arvejas",/arveja/],["garbanzos",/garbanzo/],["arroz",/arroz/],["avena",/avena/],["harina",/harina/],["banana",/banana/],["manzana",/manzana/],
-["yogur",/yogur/],["leche",/\bleche\b/],["coco",/coco rallado/],["limón",/lim[oó]n/]
-];
-function tagAll(list){list.forEach(r=>{if(!r.tags){const txt=r.i.join(" ").toLowerCase();r.tags=ING.filter(([,re])=>re.test(txt)).map(([k])=>k);}});}
-const norm=x=>String(x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
-let IMPORTED={};
-function rebuild(){const imp=Object.values(IMPORTED).flat();const names=new Set(imp.map(r=>norm(r.n)));
-  R=[...imp,...BUILTIN.filter(r=>!names.has(norm(r.n)))];tagAll(R);BYID=Object.fromEntries(R.map(r=>[r.id,r]));
-  if(S.week&&S.week.some(x=>!BYID[x.m]||!BYID[x.s]))S.week=null;}
-
-/* estado guardado en este teléfono */
-const store={get(k,d){try{const v=localStorage.getItem("mf_"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("mf_"+k,JSON.stringify(v))}catch(e){}}};
-let S={tab:"heladera",have:store.get("have",["pollo","huevo","papa","zanahoria","queso"]),favs:store.get("favs",[]),week:store.get("week",null),shop:store.get("shop",{}),q:"",cat:"Todas",book:"Todos",limit:40,sheet:null};
-
-const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const isFav=id=>S.favs.includes(id);
-
-function card(r,extra=""){
-  return `<div class="rc" role="button" tabindex="0" data-open="${r.id}">
-    <div class="dial"><div><b>${r.t?r.t+"°":"—"}</b><br><small>${r.m?(r.mr||r.m)+" min":""}</small></div></div>
-    <div style="min-width:0"><div class="t">${esc(r.n)}</div><div class="m">${esc(r.c)}${r.v==="m"?" · apta vianda":r.v==="s"?" · colación":""}</div>${extra}</div>
-    <button class="fav" data-fav="${r.id}" aria-pressed="${isFav(r.id)}" aria-label="Favorita">${isFav(r.id)?"♥":"♡"}</button>
-  </div>`;
-}
-
-/* ---------- HELADERA ---------- */
-function vHeladera(){
-  const have=new Set(S.have);
-  let res=R.filter(r=>r.tags.some(t=>have.has(t))).map(r=>{
-    const ok=r.tags.filter(t=>have.has(t)),miss=r.tags.filter(t=>!have.has(t));
-    return {r,ok,miss,score:ok.length*2-miss.length};
-  }).sort((a,b)=>a.miss.length-b.miss.length||b.ok.length-a.ok.length);
-  const ready=res.filter(x=>x.miss.length===0).length;
-  return `<h2>¿Qué tenés en la heladera?</h2>
-  <p class="lead">Tocá lo que tenés. Arriba aparecen las recetas que podés hacer ya; más abajo, las que necesitan una o dos cosas más.</p>
-  <div class="chips">${ING.map(([k])=>`<button class="chip" data-have="${k}" aria-pressed="${have.has(k)}">${k}</button>`).join("")}</div>
-  <div class="row" style="margin-top:12px;justify-content:space-between">
-    <span class="label">${have.size?`${ready} listas para hacer · ${res.length} posibles`:"Elegí al menos un ingrediente"}</span>
-    ${have.size?`<button class="btn ghost sm" data-clear>Borrar todo</button>`:""}
-  </div>
-  <div class="list">${res.length?res.slice(0,40).map(x=>card(x.r,
-    x.miss.length?`<div class="miss">Te falta: ${x.miss.join(", ")}</div>`:`<div class="have">Tenés todo lo principal</div>`)).join(""):
-    `<div class="empty">Elegí ingredientes de arriba y te muestro qué cocinar.</div>`}</div>
-  <p class="sub" style="margin-top:14px">Sal, aceite y condimentos se dan por hechos.</p>`;
-}
-
-/* ---------- VIANDA ---------- */
-const DAYS=["Lunes","Martes","Miércoles","Jueves","Viernes"];
-const mains=()=>R.filter(r=>r.v==="m"), snacks=()=>R.filter(r=>r.v==="s");
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-function buildWeek(){
-  const order=["pollo","pescado","verdura","carne","huevo","legumbre","masa"].sort(()=>Math.random()-.5);
-  if(!order.slice(0,5).includes("pescado")){order.splice(order.indexOf("pescado"),1);order.unshift("pescado");}
-  if(!order.slice(0,5).includes("verdura")){order.splice(order.indexOf("verdura"),1);order.splice(1,0,"verdura");}
-  const used=new Set(),w=[];
-  for(let d=0;d<5;d++){
-    const pool=mains().filter(r=>r.p===order[d]&&!used.has(r.id));
-    const m=pick(pool.length?pool:mains().filter(r=>!used.has(r.id)));used.add(m.id);
-    const sp=snacks().filter(r=>!used.has(r.id));const s=pick(sp);used.add(s.id);
-    w.push({m:m.id,s:s.id});
-  }
-  S.week=w;S.shop={};store.set("week",w);store.set("shop",{});
-}
-function swap(d,slot){
-  const used=new Set(S.week.flatMap(x=>[x.m,x.s]));
-  const pool=(slot==="m"?mains():snacks()).filter(r=>!used.has(r.id));
-  S.week[d][slot]=pick(pool).id;store.set("week",S.week);
-}
-function vVianda(){
-  if(mains().length<5||snacks().length<5)return `<h2>Viandas de la semana</h2><div class="empty">Necesito más recetas para armar la semana. Cargá más libros desde «Mis libros».</div>`;
-  if(!S.week)buildWeek();
-  const items=[];S.week.forEach((x,d)=>{[x.m,x.s].forEach(id=>BYID[id].i.forEach(line=>{
-    if(/^(sal|pimienta|sal,|sal y)/i.test(line))return;items.push({line,from:BYID[id].n,key:id+"|"+line});}));});
-  const seen=new Set(),uniq=items.filter(x=>{const k=x.line.toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
-  return `<h2>Viandas de la semana</h2>
-  <p class="lead">Una comida y una colación por día, de lunes a viernes, con las recetas más saludables del libro. Cada día cambia la proteína y siempre hay un día de pescado y uno de verduras.</p>
-  <div class="row"><button class="btn" data-newweek>Armar otra semana</button></div>
-  <div class="list">${S.week.map((x,d)=>{const m=BYID[x.m],s=BYID[x.s];return `<div class="day">
-    <h3>${DAYS[d]}<span class="sub">${m.t}° · ${m.m} min</span></h3>
-    <div class="slot"><span class="tag">Comida</span><button class="nm" data-open="${m.id}">${esc(m.n)}</button><button class="swap" data-swap="${d}|m" aria-label="Cambiar comida del ${DAYS[d]}">Cambiar</button></div>
-    <div class="slot"><span class="tag s">Colación</span><button class="nm" data-open="${s.id}">${esc(s.n)}</button><button class="swap" data-swap="${d}|s" aria-label="Cambiar colación del ${DAYS[d]}">Cambiar</button></div>
-  </div>`}).join("")}</div>
-  <div class="note"><b>Para la vianda:</b> cociná la noche anterior, dejá enfriar destapado y guardá en la heladera en el táper. Todas estas recetas se comen bien frías o tibias. Las colaciones se pueden hacer el domingo para toda la semana.</div>
-  <h2>Lista de compras</h2>
-  <p class="sub" style="margin:0 0 6px">${uniq.length} cosas para estas viandas. Tachá lo que ya tenés.</p>
-  <div class="shop">${uniq.map((x,k)=>{const on=!!S.shop[x.line];return `<label><input type="checkbox" id="sh${k}" data-shop="${esc(x.line)}" ${on?"checked":""}><span class="${on?"done":""}">${esc(x.line)}<br><span class="sub">${esc(x.from)}</span></span></label>`}).join("")}</div>`;
-}
-
-/* ---------- RECETAS ---------- */
-function filtered(){
-  const q=norm(S.q);
-  return R.filter(r=>(S.cat==="Todas"||(S.cat==="Aptas vianda"?r.v==="m":S.cat==="Colaciones"?r.v==="s":r.c===S.cat))
-    &&(S.book==="Todos"||(r.b||"Recetas incluidas")===S.book)
-    &&(!q||norm(r.n+" "+r.i.join(" ")).includes(q)));
-}
-function listHTML(){
-  const res=filtered();
-  return `<p class="label" style="margin:12px 0 0">${res.length} recetas</p>`+
-    (res.length?res.slice(0,S.limit).map(r=>card(r)).join("")+(res.length>S.limit?`<button class="btn ghost" data-more>Ver ${Math.min(40,res.length-S.limit)} más</button>`:""):
-    `<div class="empty">No encontré recetas con esa búsqueda.</div>`);
-}
-function vRecetas(){
-  const cats={};R.forEach(r=>cats[r.c]=(cats[r.c]||0)+1);
-  const books={};R.forEach(r=>{const b=r.b||"Recetas incluidas";books[b]=(books[b]||0)+1});
-  const opt=(v,l,cur)=>`<option value="${esc(v)}" ${v===cur?"selected":""}>${esc(l)}</option>`;
-  return `<h2>Recetas</h2>
-  <input class="search" id="q" type="search" placeholder="Buscar: milanesa, muffins, atún…" value="${esc(S.q)}" aria-label="Buscar receta">
-  <div class="row" style="margin-top:10px">
-    <select class="search" id="cat" style="flex:1 1 160px;min-width:0" aria-label="Categoría">${opt("Todas","Todas las categorías",S.cat)+opt("Aptas vianda","Aptas para vianda",S.cat)+opt("Colaciones","Colaciones",S.cat)+Object.keys(cats).sort().map(c=>opt(c,`${c} (${cats[c]})`,S.cat)).join("")}</select>
-    <select class="search" id="book" style="flex:1 1 160px;min-width:0" aria-label="Libro">${opt("Todos","Todos los libros",S.book)+Object.keys(books).sort().map(b=>opt(b,`${b} (${books[b]})`,S.book)).join("")}</select>
-  </div>
-  <div class="list" id="rlist">${listHTML()}</div>`;
-}
-
-/* ---------- LIBROS (lectura de los PDF del Drive) ---------- */
-const BOOKS=[]; const ST={}; let BUSY=false, dbNote="";
-
-/* OCR: lee páginas que son imágenes (libros escaneados o diseñados) */
-let OCRW=null;
-function loadScript(src){return new Promise((ok,ko)=>{const el=document.createElement("script");el.src=src;el.onload=ok;el.onerror=()=>ko(new Error("No se pudo descargar el lector de imágenes. Revisá tu conexión."));document.head.appendChild(el);});}
-async function ocrWorker(){
-  if(OCRW)return OCRW;
-  if(!window.Tesseract)await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
-  OCRW=await Tesseract.createWorker("spa");
-  return OCRW;
-}
-let WAKE=null;
-async function keepAwake(on){try{if(on&&navigator.wakeLock&&!WAKE)WAKE=await navigator.wakeLock.request("screen");if(!on&&WAKE){await WAKE.release();WAKE=null;}}catch(e){}}
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&BUSY){WAKE=null;keepAwake(true);}});
-function goodOcrLine(t){t=t.replace(/\s+/g," ").trim();if(t.length<2)return false;const letters=(t.match(/[\p{L}\p{N}]/gu)||[]).length;return letters/t.length>=0.55;}
-async function ocrPage(page){
-  const vp1=page.getViewport({scale:1});const scale=Math.min(2.5,1700/vp1.width);
-  const vp=page.getViewport({scale});const c=document.createElement("canvas");c.width=Math.round(vp.width);c.height=Math.round(vp.height);
-  const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
-  await page.render({canvasContext:ctx,viewport:vp}).promise;
-  const w=await ocrWorker();const {data}=await w.recognize(c);
-  c.width=c.height=0;
-  let ls=(data.lines&&data.lines.length)?data.lines.filter(l=>(l.confidence==null||l.confidence>=45)).map(l=>l.text):String(data.text||"").split("\n");
-  return ls.map(x=>x.replace(/\s+/g," ").trim()).filter(goodOcrLine);
-}
-async function pdfLines(bytes,onp,key){
-  const doc=await pdfjsLib.getDocument({data:bytes}).promise;const lines=[];
-  const saved=key?await OCRSTORE.get(key):null;const pagesOcr=(saved&&saved.pages)||{};let ocrCount=0;
-  for(let p=1;p<=doc.numPages;p++){
-    const page=await doc.getPage(p);
-    const tc=await page.getTextContent();let cur="",lastY=null;const pl=[];
-    for(const it of tc.items){const y=it.transform?it.transform[5]:null;
-      if(lastY!==null&&y!==null&&Math.abs(y-lastY)>2&&cur.trim()){pl.push(cur);cur="";}
-      cur+=it.str||"";if(it.hasEOL){pl.push(cur);cur="";lastY=null;}else lastY=y;}
-    if(cur.trim())pl.push(cur);
-    const txtLen=pl.join("").replace(/\s/g,"").length;
-    if(txtLen<60){
-      if(pagesOcr[p]){lines.push(...pagesOcr[p]);ocrCount++;onp&&onp(p,doc.numPages,"ocr-cached");}
-      else{onp&&onp(p,doc.numPages,"ocr");await keepAwake(true);
-        const ol=await ocrPage(page);pagesOcr[p]=ol;lines.push(...ol);ocrCount++;
-        if(key)await OCRSTORE.put({key,pages:pagesOcr}).catch(()=>{});}
-    }else{lines.push(...pl);onp&&onp(p,doc.numPages,"text");}
-    page.cleanup&&page.cleanup();
-  }
-  return {lines:lines.map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean),pages:doc.numPages,ocrCount};
-}
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+<script>
+/* ===== Lector de recetas v3 =====
+   1) separa cada receta por su bloque "Ingredientes"
+   2) junta todos los títulos candidatos
+   3) asigna cada título a la receta cuyos ingredientes y pasos coinciden con él
+      (y si no hay coincidencia clara, por número y posición) */
+const PARSER_VERSION=3;
+const NORM=x=>String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const H_ING=/^(ingredientes|lo que necesit[aá]s|vas a necesitar|necesit[aá]s)\b/i,
- H_PREP=/^(preparaci[oó]n|elaboraci[oó]n|paso a paso|procedimiento|instrucciones|modo de preparaci[oó]n|c[oó]mo se hace)\b/i,
- H_COC=/^(cocci[oó]n|en la (freidora|airfryer)|tiempo y temperatura|temperatura y tiempo)\b/i,
- H_RES=/^(resultado)\b/i, H_NUT=/^(valores nutricionales|informaci[oó]n nutricional|valor nutricional|tabla nutricional)/i, META=/(\d+\s*(porci[oó]n|porciones|raciones|unidades|personas|min|minutos)\b|^tiempo\b|^rinde\b|^porciones\b|^dificultad\b)/i, H_TIP=/^[^\p{L}]{0,4}(tip|consejo|truco|nota|secreto)\b\s*[:.\-]?\s*/iu, H_DESC=/^descripci[oó]n\b/i,
+ H_PREP=/^(preparaci[oó]n|elaboraci[oó]n|paso a paso|pasos|procedimiento|instrucciones|modo de preparaci[oó]n|c[oó]mo se hace)\b/i,
+ H_COC=/^(cocci[oó]n|en la (freidora|airfryer)|tiempo y temperatura|temperatura y tiempo)\b\s*:?\s*$/i,
+ H_RES=/^resultado\b/i,
+ H_TIP=/^(?:[^\p{L}\p{N}]{0,4}|\S{1,6}\s+)(tip|consejo|truco|nota|secreto|sugerencia)\b\s*(del chef)?\s*[:.\-]?\s*/iu,
+ H_WARN=/^(?:[^\p{L}\p{N}]{0,4}|\S{1,6}\s+)(advertencia|atenci[oó]n|cuidado|importante)\b\s*[:.\-]?\s*/iu,
+ H_POR=/^[^\p{L}\p{N}]{0,3}(porci[oó]n(es)?|rinde|raciones)\s*[:.]\s*/iu,
+ H_NUTRI=/^[^\p{L}\p{N}]{0,3}(nutrici[oó]n|valores nutricionales|informaci[oó]n nutricional|valor nutricional|tabla nutricional)\b\s*(\(.*?\))?\s*[:.]?\s*/iu,
+ H_DESC=/^descripci[oó]n\b/i,
+ META=/(\b\d+\s*(porci[oó]n|porciones|raciones|unidades|personas|min|minutos)\b|^tiempo\b|^dificultad\b)/i,
  CHAP=/cap[ií]tulo\s*\d+\s*[–\-—:.]\s*(.{3,70})$/iu,
- TNUM=/^[^\p{L}\p{N}]{0,8}(\d{1,4})\s*[\.\)\-–]\s+(\p{L}.{2,110})$/u,
- BUL=/^[\s●•▪○◦\-–*·✓✔➤►]+/;
-const cap=x=>{x=x.trim();return x.charAt(0).toUpperCase()+x.slice(1).toLowerCase();};
-function cleanTitle(x){return x.replace(TNUM,"$2").replace(/^[^\p{L}\p{N}¿¡"“(]+/u,"").replace(/\s*[:.]$/,"").trim();}
-function collect(lines,a,b,isStep){
-  const out=[];for(let k=a;k<b;k++){let x=lines[k];const bullet=BUL.test(x)||/^\d{1,2}\s*[\.\)]\s*\D/.test(x)||/^\d{1,2}\\\./.test(x);
-    x=x.replace(BUL,"").replace(/^\d{1,2}\s*\\?[\.\)]\s*/,"").trim();if(!x)continue;
-    if(out.length&&!bullet&&!/[:.!)]$/.test(out[out.length-1])&&/^[\p{Ll}(\d]/u.test(x))out[out.length-1]+=" "+x;else out.push(x);}
+ TNUM=/^[^\p{L}\p{N}]{0,8}(\d{1,4})\s*[\.\)\-–]\s*(\p{L}.{2,110})$/u,
+ BUL=/^[\s●•▪○◦\-–*·✓✔➤►]+/,
+ JUNK=/^(\|.*\||-{3,}|\[?\s*page\s*\d+.*|p[aá]gina\s*\d+|\d{1,4}|.*\b[a-z0-9-]+\.(com|net|org|uy|ar)\b.*)$/i;
+const STOP=new Set("con de del la las el los en al a y o para sin por su sus un una unos unas tipo estilo receta recetas casera casero caseras caseros light fit saludable saludables crocante crocantes crujiente crujientes dorado dorados doradas airfryer freidora aire express exprés rapido rapida rapidos rapidas facil faciles versión version mini relleno rellena rellenos rellenas horno sin culpa clasico clasica perfecto perfecta super ultra integral integrales natural naturales plancha asado asada asados asadas al estilo grill gratinado gratinada gratinados gratinadas".split(" "));
+const SYN={aguacate:"palta",platano:"banana",calabacin:"zapallito",zucchini:"zapallito",zumo:"jugo",gamba:"langostino",patata:"papa",champinon:"hongo",champinone:"hongo",judia:"chaucha",pechuga:"pollo",suprema:"pollo",muslo:"pollo",claras:"huevo",clara:"huevo",yema:"huevo",omelette:"huevo",huevos:"huevo",carne:"carne",ternera:"carne",res:"carne",frutilla:"fresa",fresas:"fresa",oat:"avena",couscou:"cuscus",couscous:"cuscus",cuscu:"cuscus",palito:"baston",bastone:"baston",baston:"baston",alubia:"poroto",frijol:"poroto",judia:"chaucha",ejote:"chaucha",chauchas:"chaucha",pavo:"pavo",bizcochito:"bizcocho",magdalena:"muffin",cupcake:"muffin",panecillo:"pan",bollito:"pan",tostada:"pan",rebanada:"pan",sandwich:"pan",bocadillo:"pan"};
+function tokens(x){
+  return NORM(x).replace(/[^a-z0-9ñ ]+/g," ").split(/\s+/).filter(w=>w.length>=3&&!STOP.has(w)&&!/^\d+$/.test(w)).map(w=>{
+    if(SYN[w])return SYN[w];let s=w;if(s.length>5&&s.endsWith("es"))s=s.slice(0,-2);else if(s.length>3&&s.endsWith("s"))s=s.slice(0,-1);return SYN[s]||s;});
+}
+function overlap(title,bodyTok){const tt=[...new Set(tokens(title))];if(!tt.length)return {score:0,n:0};
+  let hit=0;for(const t of tt){if(bodyTok.has(t)||[...bodyTok].some(b=>b.length>=5&&t.length>=5&&(b.startsWith(t.slice(0,5))||t.startsWith(b.slice(0,5)))))hit++;}
+  return {score:hit/tt.length,n:hit,total:tt.length};}
+const cap=x=>{x=x.trim();return x.charAt(0).toUpperCase()+x.slice(1);};
+const isUpper=x=>{const L=(x.match(/\p{L}/gu)||[]);return L.length>=3&&L.filter(c=>c===c.toUpperCase()).length/L.length>0.75;};
+function niceTitle(x){
+  x=x.replace(TNUM,"$2").replace(/^[^\p{L}\p{N}¿¡"“(]+/u,"").replace(/\s*[:.]$/,"").replace(/\s+/g," ").trim();
+  if(isUpper(x))x=x.toLowerCase();return cap(x);
+}
+function cleanLines(raw){const lines=[],page=[];let pg=0;
+  for(const r of raw){const l=String(r).replace(/\s+/g," ").trim();const m=l.match(/^§PAGE (\d+)$/);if(m){pg=+m[1];continue;}if(!l||JUNK.test(l))continue;lines.push(l);page.push(pg);}
+  return {lines,page};}
+
+/* une líneas cortadas: solo si la siguiente empieza en minúscula y la anterior no terminó */
+function collect(lines,a,b,skip){
+  const out=[];
+  for(let k=a;k<b;k++){if(skip&&skip.has(k))continue;let x=lines[k];
+    const bullet=BUL.test(x)||/^\d{1,2}\s*[\.\)]\s*\S/.test(x);
+    x=x.replace(BUL,"").replace(/^\d{1,2}\s*[\.\)]\s*/,"").trim();if(!x)continue;
+    const prev=out[out.length-1];
+    if(prev&&!bullet&&/^[\p{Ll}(]/u.test(x)&&!/[:.!?)]$/.test(prev)&&prev.length>18)out[out.length-1]=prev+" "+x;
+    else out.push(x);
+  }
   return out;
 }
-function parseBook(lines,book,fileId){
-  const recs=[];const ingIdx=[];lines.forEach((l,k)=>{if(H_ING.test(l))ingIdx.push(k)});
-  const starts=[];let lastEnd=0;
-  ingIdx.forEach((ii,j)=>{
-    let tIdx=-1,lo=Math.max(lastEnd,ii-16);
-    for(let k=ii-1;k>=lo;k--){if(H_PREP.test(lines[k])||H_NUT.test(lines[k])||META.test(lines[k])||/[.]$/.test(lines[k]))break;if(TNUM.test(lines[k])&&!H_ING.test(lines[k])&&!/[.;,:]$/.test(lines[k])){tIdx=k;break;}}
-    if(tIdx<0){for(let k=ii-1;k>=lo;k--){if(H_DESC.test(lines[k])&&k>lo){tIdx=k-1;break;}}}
-    let tEnd=-1;
-    if(tIdx<0){let k=ii-1;while(k>=lo&&(META.test(lines[k])||lines[k].length<3))k--;
-      if(k>=lo&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!H_PREP.test(lines[k])&&!H_NUT.test(lines[k])){tIdx=k;tEnd=k;
-        const upper=x=>{const L=(x.match(/\p{L}/gu)||[]);return L.length>=3&&L.filter(c=>c===c.toUpperCase()).length/L.length>0.75;};
-        while(tIdx-1>=lo&&upper(lines[tIdx])&&upper(lines[tIdx-1])&&lines[tIdx-1].length<45&&!META.test(lines[tIdx-1])&&tEnd-tIdx<2)tIdx--;}}
-    if(tIdx<0)return; starts.push({tIdx,tEnd:tEnd<0?tIdx:tEnd,ii});lastEnd=ii+1;
+function textBlock(lines,a,b,head){return lines.slice(a,b).join(" ").replace(head,"").replace(/\s+/g," ").trim();}
+
+function parseBook(rawLines,book,fileId){
+  const {lines,page}=cleanLines(rawLines);const paged=page.length&&page[page.length-1]>0;
+  const N=lines.length;
+  const isStruct=l=>H_ING.test(l)||H_PREP.test(l)||H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||H_COC.test(l);
+  const ingIdx=[];lines.forEach((l,k)=>{if(H_ING.test(l))ingIdx.push(k);});
+  if(!ingIdx.length)return [];
+
+  /* --- 1. candidatos a título --- */
+  const titleAt=new Map(); // idx -> {idx,num,text}
+  const stepZones=[];
+  // zonas de pasos (para no confundir pasos numerados con títulos)
+  ingIdx.forEach((ii,j)=>{const nx=j+1<ingIdx.length?ingIdx[j+1]:N;let p=-1;for(let k=ii+1;k<nx;k++){if(H_PREP.test(lines[k])){p=k;break;}}
+    if(p>=0){let e=p+1,lastStep=0;
+      const META_LINE=/^\s*\d+\s*(porci[oó]n(es)?|raciones|personas|unidades)\b|^(tiempo|porciones|rinde|raciones)\s*:/i;
+      while(e<nx){const l=lines[e];const sm=l.match(/^\s*(\d{1,2})\s*[.)]/);
+        if(H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||META_LINE.test(l))break;
+        if(sm){const n=+sm[1];if(n===lastStep+1||n===1&&lastStep===0){lastStep=n;e++;continue;}
+          if(TNUM.test(l)&&!/[.;,:]$/.test(l)&&!/\d\s*(min|°)/i.test(l))break;}
+        e++;}
+      if(e<nx&&META_LINE.test(lines[e])){let q=e;while(q-1>p&&isUpper(lines[q-1])&&e-q<2)q--;e=q;}
+      stepZones.push([p,e]);}});
+  const inSteps=k=>stepZones.some(([a,b])=>k>a&&k<b);
+  lines.forEach((l,k)=>{const m=l.match(TNUM);
+    if(m&&!/[.;,:]$/.test(l)&&!isStruct(l)&&l.length<=110&&!inSteps(k)&&!/\d\s*(min|°|g\b|ml\b|kcal)/i.test(l))titleAt.set(k,{idx:k,num:+m[1],text:l});});
+  // libros sin números: línea(s) arriba de "Ingredientes" (saltando porciones/tiempos), o la de arriba de "Descripción"
+  ingIdx.forEach((ii,j)=>{const lo=j?ingIdx[j-1]+1:0;let k=ii-1;
+    while(k>=lo&&(META.test(lines[k])||H_POR.test(lines[k])||H_NUTRI.test(lines[k])||/^\p{Ll}/u.test(lines[k])&&k>lo&&lines[k].length>0&&!isUpper(lines[k])&&false))k--;
+    // salta descripción
+    for(let d=ii-1;d>=Math.max(lo,ii-14);d--){if(H_DESC.test(lines[d])){k=d-1;break;}}
+    if(k>=lo&&!titleAt.has(k)&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!isStruct(lines[k])&&!inSteps(k)){
+      let s=k;while(s-1>=lo&&isUpper(lines[s])&&isUpper(lines[s-1])&&lines[s-1].length<45&&!META.test(lines[s-1])&&k-s<2)s--;
+      const text=lines.slice(s,k+1).join(" ");
+      titleAt.set(s,{idx:s,end:k,num:null,text,fallback:true});
+    }});
+  const titles=[...titleAt.values()].sort((a,b)=>a.idx-b.idx);
+  const titleIdxSet=new Set();titles.forEach(t=>{for(let k=t.idx;k<=(t.end||t.idx);k++)titleIdxSet.add(k);});
+
+  /* --- 2. cuerpos --- */
+  const bodies=ingIdx.map((ii,j)=>{
+    const prevII=j?ingIdx[j-1]:-1,nextII=j+1<ingIdx.length?ingIdx[j+1]:N;
+    // metadatos justo antes de "Ingredientes" (porción / nutrición)
+    let por=(lines[ii].match(/\((?:para\s+)?([^)]{3,40})\)/i)||[])[1]||"",nut="",preStart=ii;
+    for(let k=ii-1;k>prevII&&k>=ii-6;k--){if(H_POR.test(lines[k])){por=lines[k].replace(H_POR,"").trim();preStart=k;}else if(H_NUTRI.test(lines[k])){nut=lines[k].replace(H_NUTRI,"").trim();preStart=k;}else if(META.test(lines[k])&&!titleIdxSet.has(k)){if(!por){const m=lines[k].match(/\d+\s*(porci[oó]n(es)?|raciones|unidades|personas)/i);if(m)por=m[0];}}else break;}
+    // fin: antes de los metadatos/título del siguiente cuerpo
+    let end=nextII;
+    if(nextII<N){for(let k=nextII-1;k>ii&&k>=nextII-6;k--){if(H_POR.test(lines[k])||H_NUTRI.test(lines[k])||META.test(lines[k]))end=k;else break;}}
+    let prep=-1,coc=-1,res=-1,tip=-1,warn=-1,nutIn=-1;
+    for(let k=ii+1;k<end;k++){const l=lines[k];
+      if(prep<0&&H_PREP.test(l))prep=k;else if(coc<0&&H_COC.test(l))coc=k;else if(res<0&&H_RES.test(l))res=k;
+      else if(tip<0&&H_TIP.test(l))tip=k;else if(warn<0&&H_WARN.test(l))warn=k;else if(nutIn<0&&H_NUTRI.test(l))nutIn=k;}
+    const marks=[prep,coc,res,tip,warn,nutIn].filter(x=>x>ii);
+    const nextMark=k0=>Math.min(end,...marks.filter(x=>x>k0));
+    const ingEnd=nextMark(ii);
+    const i=collect(lines,ii+1,ingEnd,titleIdxSet).filter(x=>!META.test(x)||x.length>40);
+    const s=prep>=0?collect(lines,prep+1,nextMark(prep),titleIdxSet):[];
+    // en algunos libros "Cocción" trae temperatura y tiempo
+    const cocTxt=coc>=0?textBlock(lines,coc,nextMark(coc),/^/):"";
+    const grab=(k,head)=>{if(k<0)return "";const e=nextMark(k);const parts=[];for(let q=k;q<e;q++){if(titleIdxSet.has(q))break;parts.push(lines[q]);}return parts.join(" ").replace(head,"").replace(/\s+/g," ").trim();};
+    const tipT=grab(tip,H_TIP),warnT=grab(warn,H_WARN),resT=grab(res,/^resultado\s*:?\s*/i);
+    if(!nut&&nutIn>=0)nut=grab(nutIn,H_NUTRI).slice(0,160);
+    const body=[...i,...s,tipT].join(" ");
+    return {ii,prevII,nextII,preStart,end,i,s,cocTxt,tip:tipT,warn:warnT,res:resT,por,nut,tok:new Set(tokens(body)),
+      ingTok:new Set(tokens(i.join(" "))),segTxt:[...i,...s,cocTxt].join(" ")};
   });
-  let chapter="";let chapAt=0;
-  starts.forEach((st,j)=>{
-    for(let k=chapAt;k<st.tIdx;k++){const m=lines[k].match(CHAP);if(m)chapter=cap(m[1].replace(/[^\p{L}\p{N} ,()\-–]/gu,"").trim());}chapAt=st.tIdx;
-    const end=j+1<starts.length?starts[j+1].tIdx:lines.length;
-    let a=st.ii+1,prep=-1,coc=-1,res=-1,tip=-1,nut=-1;
-    for(let k=a;k<end;k++){const l=lines[k];
-      if(prep<0&&H_PREP.test(l))prep=k;else if(coc<0&&H_COC.test(l))coc=k;else if(res<0&&H_RES.test(l))res=k;else if(tip<0&&H_TIP.test(l))tip=k;else if(nut<0&&H_NUT.test(l))nut=k;}
-    const nutEnd=k0=>{const ends=[coc,res,tip,end].filter(x=>x>k0);if(nut>k0)ends.push(nut);return Math.min(...ends);};
-    const stops=[prep,coc,res,tip,nut,end].filter(x=>x>=a);
-    const ingEnd=Math.min(...stops);
-    const i=collect(lines,a,ingEnd,false);
-    let s=[];if(prep>=0){s=collect(lines,prep+1,nutEnd(prep),true);}
-    const cocTxt=coc>=0?lines.slice(coc,Math.min(...[res,tip,end].filter(x=>x>coc))).join(" "):"";
-    const segTxt=lines.slice(st.tIdx,end).join(" ");
-    const src=cocTxt||segTxt;
-    const findT=txt=>{const re=/(\d{2,3})\s*(?:°|º|˚|grados)\s*(C|F)?|(\d{3})\s*C\b/gi;let m;while((m=re.exec(txt))){const v=+(m[1]||m[3]);if((m[2]||"").toUpperCase()==="F")continue;if(v>=100&&v<=240)return v;}return null;};
-    const tv=findT(src)||findT(segTxt);const tm=tv?[0,tv]:null;
+
+  // recetas repetidas en el libro (mismos ingredientes): se usa solo la primera
+  const seenSig=new Set();bodies.forEach(b=>{const sig=b.i.map(x=>NORM(x).replace(/[^a-z0-9]/g,"")).join("|");b.dup=sig.length>8&&seenSig.has(sig);seenSig.add(sig);});
+  /* --- 3. asignar títulos --- */
+  // peso de cada palabra: las comunes (pollo, huevo, aceite) valen poco; las distintivas (trucha, quiche) mucho
+  const df=new Map();bodies.forEach(b=>b.tok.forEach(t=>df.set(t,(df.get(t)||0)+1)));
+  const NB=bodies.length;const W=t=>Math.log((NB+1)/((df.get(t)||0)+1))+0.15;
+  const tTok=titles.map(t=>[...new Set(tokens(t.text))]);
+  const hasTok=(set,t)=>set.has(t)||(t.length>=5&&[...set].some(b=>b.length>=5&&(b.startsWith(t.slice(0,5))||t.startsWith(b.slice(0,5)))));
+  const cScore=(ti,bi)=>{const tt=tTok[ti];if(!tt.length)return {s:0,hit:0,n:0,wt:0};let tot=0,got=0,hit=0;
+    for(const t of tt){const w=W(t);tot+=w;if(hasTok(bodies[bi].tok,t)){got+=w;hit++;}}return {s:got/tot,hit,n:tt.length,wt:tot};};
+  const bTitle=new Array(NB).fill(-1),usedT=new Set();
+  const MAXD=90;
+  const weight=(bi,ti,samePage)=>{const t=titles[ti],b=bodies[bi];if(b.dup)return 0;const d=t.idx-b.ii;if(Math.abs(d)>MAXD)return 0;const c=cScore(ti,bi);
+    let w=1.4*c.s+(samePage?0.3:0)+(d<0&&t.idx>=(bi?bodies[bi-1].end-1:0)?0.08:0)+0.05*Math.exp(-Math.abs(d)/15);
+    if(c.n>=2&&c.hit===0)w-=0.6;return w>0.15?w:0;};
+  // mejor combinación exacta entre un grupo chico de recetas y títulos
+  function bestMatch(bs,ts,samePageFn){
+    if(!bs.length||!ts.length)return;
+    if(ts.length>13||bs.length>10){// grupo grande: mejor par primero
+      const pr=[];bs.forEach(bi=>ts.forEach(ti=>{const w=weight(bi,ti,samePageFn(bi,ti));if(w)pr.push([w,bi,ti]);}));pr.sort((x,y)=>y[0]-x[0]);
+      for(const [w,bi,ti] of pr){if(bTitle[bi]<0&&!usedT.has(ti)){bTitle[bi]=ti;usedT.add(ti);}}return;}
+    const Wm=bs.map(bi=>ts.map(ti=>weight(bi,ti,samePageFn(bi,ti))));
+    const memo=new Map();
+    const go=(i,mask)=>{if(i===bs.length)return [0,[]];const key=i*8192+mask;if(memo.has(key))return memo.get(key);
+      let best=go(i+1,mask);best=[best[0],[-1,...best[1]]];
+      for(let j=0;j<ts.length;j++){if(mask&(1<<j)||!Wm[i][j])continue;const r=go(i+1,mask|(1<<j));if(r[0]+Wm[i][j]>best[0])best=[r[0]+Wm[i][j],[j,...r[1]]];}
+      memo.set(key,best);return best;};
+    const [,pick]=go(0,0);pick.forEach((j,i)=>{if(j>=0){bTitle[bs[i]]=ts[j];usedT.add(ts[j]);}});
+  }
+  if(paged){
+    const pages=[...new Set(bodies.map(b=>page[b.ii]))];
+    // 1º títulos de la misma página; 2º lo que sobra, con las páginas vecinas
+    for(const pg of pages){
+      const bs=bodies.map((b,i)=>i).filter(i=>page[bodies[i].ii]===pg);
+      const ts=titles.map((t,i)=>i).filter(i=>page[titles[i].idx]===pg);
+      bestMatch(bs,ts,()=>true);
+    }
+    for(const pg of pages){
+      const bs=bodies.map((b,i)=>i).filter(i=>bTitle[i]<0&&page[bodies[i].ii]===pg);
+      const ts=titles.map((t,i)=>i).filter(i=>!usedT.has(i)&&Math.abs(page[titles[i].idx]-pg)<=1);
+      bestMatch(bs,ts,(bi,ti)=>page[titles[ti].idx]===pg);
+    }
+    // por descarte: si en una página quedan tantas recetas sin título como títulos libres, se emparejan en orden
+    for(const pg of pages){
+      const bs=bodies.map((b,i)=>i).filter(i=>bTitle[i]<0&&!bodies[i].dup&&page[bodies[i].ii]===pg);
+      const ts=titles.map((t,i)=>i).filter(i=>!usedT.has(i)&&page[titles[i].idx]===pg);
+      if(bs.length&&bs.length===ts.length){const byNum=ts.slice().sort((a,b)=>(titles[a].num??titles[a].idx)-(titles[b].num??titles[b].idx));
+        bs.forEach((bi,k)=>{const ti=byNum[k];const c=cScore(ti,bi);const known=tTok[ti].filter(t=>df.has(t)).length;if(c.hit===0&&known>=2)return;bTitle[bi]=ti;usedT.add(ti);});}
+    }
+  }else{
+    // sin páginas: grupos de recetas cercanas
+    for(let g=0;g<NB;g+=6){const bs=[];for(let i=g;i<Math.min(NB,g+6);i++)bs.push(i);
+      const lo=bodies[bs[0]].ii-MAXD,hi=bodies[bs[bs.length-1]].ii+MAXD;
+      const ts=titles.map((t,i)=>i).filter(i=>!usedT.has(i)&&titles[i].idx>=lo&&titles[i].idx<=hi);
+      bestMatch(bs,ts,()=>false);}
+  }
+  // recetas sin título: uno libre cercano que coincida bien
+  for(let bi=0;bi<NB;bi++){if(bTitle[bi]>=0)continue;let best=-1,bs=0;
+    titles.forEach((t,ti)=>{if(usedT.has(ti))return;const d=Math.abs(t.idx-bodies[bi].ii);if(d>160)return;const c=cScore(ti,bi);
+      if(c.hit>=1&&c.s>=0.5&&c.s-d/800>bs){bs=c.s-d/800;best=ti;}});
+    if(best>=0){bTitle[bi]=best;usedT.add(best);}}
+  /* --- 4. armar recetas --- */
+  let chapter="";const chapters=[];lines.forEach((l,k)=>{const m=l.match(CHAP);if(m)chapters.push({k,c:m[1].replace(/[^\p{L}\p{N} ,()\-–]/gu,"").trim()});});
+  const recs=[];
+  bodies.forEach((b,bi)=>{
+    if(b.i.length<1||b.dup)return;
+    const t=bTitle[bi]>=0?titles[bTitle[bi]]:null;
+    let name=t?niceTitle(t.text):"";
+    if(!name){// sin título: nombre a partir del ingrediente principal
+      const main=b.i.map(x=>x.replace(/^[\d½¼¾\/.,\s]+(g|kg|ml|l|cdas?|cditas?|tazas?|unidades?|cucharadas?|cucharaditas?|latas?|filetes?|dientes?|trozos?|rebanadas?|hojas?)?\s*(de\s+)?/i,"").split(/[,(]/)[0].trim().split(" ").slice(0,2).join(" ")).filter(x=>x&&!/^(sal|pimienta|aceite|agua)\b/i.test(x)).slice(0,2);
+      name=cap(main.join(" y ").toLowerCase()||"Receta");
+    }
+    for(const c of chapters){if(c.k<b.ii)chapter=c.c;}
+    const cs=t?cScore(bTitle[bi],bi):null;
+    const src=b.cocTxt||b.segTxt;
+    const findT=txt=>{const re=/(\d{2,3})\s*(?:°|º|˚|grados)\s*(C|F)?|(\d{3})\s*C\b/gi;let m;while((m=re.exec(txt))){const v=+(m[1]||m[3]);if((m[2]||"").toUpperCase()==="F")continue;if(v>=90&&v<=240)return v;}return null;};
+    const temp=findT(src)||findT(b.segTxt);
     const mm=src.match(/(\d{1,3})\s*(?:[–\-—]|a)\s*(\d{1,3})\s*min/i)||src.match(/(\d{1,3})\s*min/i);
-    let tipTxt="";if(tip>=0)tipTxt=lines.slice(tip,end).join(" ").replace(H_TIP,"").trim().slice(0,300);
-    let resTxt="";if(res>=0)resTxt=lines.slice(res+1,Math.min(...[tip,end].filter(x=>x>res))).join(" ").slice(0,240);
-    const por=(lines[st.ii].match(/\(([^)]{3,40})\)/)||[])[1]||((lines.slice(st.tIdx,st.ii+1).join(" ").match(/(\d+)\s*(porci[oó]n(?:es)?|raciones|unidades|personas)/i)||[])[0]||"");
-    let name=cleanTitle(lines.slice(st.tIdx,(st.tEnd||st.tIdx)+1).join(" "));
-    {const L=(name.match(/\p{L}/gu)||[]);if(L.length&&L.filter(c=>c===c.toUpperCase()).length/L.length>0.8)name=cap(name);}if(!name||i.length<1)return;
-    const r={id:fileId.slice(-6)+"-"+recs.length,n:name,c:chapter||book,b:book,t:tm?+(tm[1]||tm[2]):null,
-      m:mm?+(mm[2]||mm[1]):null,mr:mm?(mm[2]?`${mm[1]}–${mm[2]}`:mm[1]):"",i,s,tip:tipTxt,res:resTxt,por,
-      flip:/(dar vuelta|d[aá]ndo(los|las|lo|la)? vuelta|gir[aá]|agit[aá]|a mitad de(l tiempo| cocci))/i.test(segTxt)};
-    classify(r);recs.push(r);
+    const m1=mm?+mm[1]:null,m2=mm&&mm[2]?+mm[2]:null;
+    const allTxt=NORM([name,...b.i,...b.s,b.cocTxt].join(" "));
+    const usesFryer=!!temp||/airfryer|freidora|canasta|cesta/.test(allTxt);
+    const r={id:fileId.slice(-6)+"-"+recs.length,n:name,ch:chapter,b:book,t:temp,m:m2||m1,mr:mm?(m2?`${m1}–${m2}`:`${m1}`):"",
+      i:b.i,s:b.s,tip:b.tip?cap(b.tip):"",warn:b.warn?cap(b.warn):"",res:b.res,por:b.por,nut:b.nut,fryer:usesFryer,
+      flip:/(dar vuelta|d[aá]ndo(los|las|lo|la)? vuelta|voltea|gir[aá]|agit[aá]|a mitad de(l tiempo| cocci))/i.test(b.segTxt),
+      q:t?(cs.n?Math.round(cs.s*100)/100:0.5):0};
+    recs.push(r);
   });
   return recs;
 }
-function classify(r){
-  const ing=r.i.join(" ").toLowerCase(),all=(r.n+" "+r.c+" "+ing).toLowerCase();
-  const p=/merluza|pescad|at[uú]n|salm[oó]n|br[oó]tola|calamar|langostin|marisco|lenguado|sardina|corvina/.test(ing)?"pescado":
-    /pollo|pechuga|suprema|muslo|pavo/.test(ing)?"pollo":/carne|bife|cerdo|bondiola|matambre|asado|lomo|cuadril|nalga|costilla/.test(ing)?"carne":
-    /lenteja|garbanzo|poroto|soja/.test(ing)?"legumbre":/huevo/.test(ing)&&!/harina|polvo de hornear/.test(ing)?"huevo":
-    /masa|tapa|pizza|pasta|fideo|ñoqui|ravio|canel/.test(all)?"masa":"verdura";
-  const sweet=/desayuno|merienda|postre|galleti|cookie|muffin|bud[ií]n|torta|brownie|alfajor|bizcochuelo|panqueque|scone|granola|barrita|cupcake|magdalena|dona|pancake/.test(all)
-    ||(/miel|az[uú]car|stevia|cacao|dulce de leche/.test(ing)&&!/cebolla|ajo|pimienta/.test(ing));
-  const bad=/vino|cerveza|whisky|licor|\bron\b|queso azul|picante|aj[ií] molido|chile|chantilly/.test(all);
-  r.p=sweet?"":p;
-  if(bad)r.v="";
-  else if(sweet)r.v=(/postre|chocolate|alfajor|helado|flan/.test(all)&&!/avena|banana|manzana|zanahoria|yogur/.test(ing))?"":"s";
-  else r.v=((["pescado","pollo","carne","legumbre","huevo"].includes(p)||/ricota|queso|at[uú]n|jam[oó]n/.test(ing))&&(r.m||0)<=30)?"m":"";
-}
-function b64bytes(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return u;}
 
-/* almacenamiento en el teléfono (IndexedDB) */
+
+/* ============ íconos ============ */
+const IC={
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg>',
+ fridge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M5 10h14M9 5.5v1.5M9 13v3"/></svg>',
+ lunch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M8 8V6a4 4 0 0 1 8 0v2M3 13h18"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/></svg>',
+ temp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14V5a2 2 0 1 1 4 0v9a4 4 0 1 1-4 0z"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 5-7 7 7 7"/></svg>',
+ swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>',
+ play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+};
+const CATS=[
+ {k:"Desayunos y meriendas",c:"#D98E1F",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10h13v4a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H16M9 3v3M13 3v3"/></svg>'},
+ {k:"Pollo y pavo",c:"#C9772C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 14.5 9 20a2.1 2.1 0 1 1-3-3l5.5-5.5"/><path d="M11.5 11.5a5 5 0 1 1 3 3z"/></svg>'},
+ {k:"Carnes",c:"#B4483A",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 13c0-5 4-9 9-9 3.5 0 6 2.5 6 6 0 6-6 10-11 10-2.5 0-4-1.5-4-4z"/><circle cx="14" cy="10" r="2"/></svg>'},
+ {k:"Pescados y mariscos",c:"#2F7D95",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M2 12s4-6 10-6 8 6 8 6-2 6-8 6S2 12 2 12z"/><path d="M20 12l2-3v6zM14 10.5v.01"/></svg>'},
+ {k:"Huevos",c:"#C9A227",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c3.5 0 7 5.5 7 10a7 7 0 0 1-14 0c0-4.5 3.5-10 7-10z"/></svg>'},
+ {k:"Verduras y guarniciones",c:"#4C8A52",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19C5 10 11 5 20 4c-1 9-6 15-15 15z"/><path d="M5 19 13 11"/></svg>'},
+ {k:"Pastas, pizzas y masas",c:"#C26A2E",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 20h18z"/><circle cx="11" cy="14" r="1.2" fill="currentColor"/><circle cx="14" cy="17" r="1.2" fill="currentColor"/></svg>'},
+ {k:"Legumbres y veggie",c:"#7A8B2E",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="9" cy="13" rx="5" ry="6.5" transform="rotate(-25 9 13)"/><path d="M15 6c3 1 5 4 4 8"/></svg>'},
+ {k:"Snacks y aperitivos",c:"#B87A1C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 21 4 8h16l-2 13z"/><path d="M8 8 7 3M12 8V2.5M16 8l1-5"/></svg>'},
+ {k:"Dulces y postres",c:"#B8577A",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 11h14l-1.5 9h-11z"/><path d="M5 11a4 4 0 0 1 4-4 3 3 0 0 1 6 0 4 4 0 0 1 4 4"/></svg>'},
+ {k:"Salsas y dips",c:"#8B5E3C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/></svg>'},
+ {k:"Bebidas y batidos",c:"#3E8C7A",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 6h12l-1.5 15h-9z"/><path d="M14 6l2-4M6.5 11h11"/></svg>'}
+];
+const CATBY=Object.fromEntries(CATS.map(c=>[c.k,c]));
+const icTile=cat=>{const c=CATBY[cat]||CATS[5];return `<div class="ic" style="background:color-mix(in srgb,${c.c} 16%,transparent);color:${c.c}">${c.i}</div>`;};
+
+/* ============ clasificación ============ */
+function classify(r){
+  const n=NORM(r.n),ing=NORM(r.i.join(" ")),ch=NORM(r.ch||""),all=n+" "+ing;
+  const has=(re,x=all)=>re.test(x);
+  const FISH=/merluza|pescad|atun|salmon|brotola|calamar|langostin|marisco|lenguado|sardina|corvina|trucha|dorada|caballa|bacalao|gamba|camaron|mejillon|pulpo|abadejo|tilapia|lubina/;
+  const CHICK=/pollo|pechuga|suprema|muslo|pavo|alita/;
+  const MEAT=/carne|bife|cerdo|bondiola|matambre|asado|lomo|cuadril|nalga|costilla|ternera|chorizo|milanesa(?! de (pollo|berenjena|soja|pescado))/;
+  const SWEET=/postre|pastelito|brownie|bizcoch|torta|tarta de (manzana|pina|fresa|frutilla|limon|queso|chocolate|pera)|flan|coulant|crumble|cheesecake|pastel de (queso|zanahoria|chocolate|platano|banana|manzana)|galleta|cookie|alfajor|dona|budin|magdalena|muffin|cupcake|rollitos? (dulce|de canela)|helado|mousse|churro|trufa|bombon|barrita|macaron|tiramisu|compota|manzanas? asada/;
+  const BREAK=/desayuno|merienda/;
+  let c;
+  if(has(/batido|smoothie|licuado|jugo|zumo|limonada|agua de|bebida|detox|infusion|te helado/,n)&&!r.fryer)c="Bebidas y batidos";
+  else if(has(/^(salsa|dip|aderezo|mayonesa|vinagreta|hummus|guacamole|chimichurri|pesto|crema de (ajo|palta|aguacate))\b/,n))c="Salsas y dips";
+  else if(has(SWEET,n))c=has(BREAK,ch)&&!has(/brownie|coulant|flan|cheesecake|tiramisu|helado|mousse/,n)?"Desayunos y meriendas":"Dulces y postres";
+  else if(has(BREAK,ch)&&!has(FISH,n)&&!has(CHICK,n)&&!has(MEAT,n)||has(/tostada|avena|granola|pancake|panqueque|tortita|waffle|gofre|yogur|medialuna|scone|croissant|porridge|bagel/,n)&&!has(FISH,n)&&!has(CHICK,n))c="Desayunos y meriendas";
+  else if(has(FISH,n))c="Pescados y mariscos";
+  else if(has(CHICK,n))c="Pollo y pavo";
+  else if(has(MEAT,n))c="Carnes";
+  else if(has(/pasta|fideo|noqui|ravio|canelon|lasan|sorrentino|pizza|pizzeta|empanad|tarta|quiche|calzone|wrap|taco|burrito|fajita|sandwich|bocadillo|panini|pan\b|pan de|focaccia|fugazza|chipa|pastel de papa/,n))c="Pastas, pizzas y masas";
+  else if(has(/huevo|tortilla(?! integral| de trigo| mexicana)|omelette|revuelto|frittata|clara/,n))c="Huevos";
+  else if(has(/garbanzo|lenteja|poroto|alubia|frijol|falafel|soja|tofu|seitan|quinoa|hummus/,n))c="Legumbres y veggie";
+  else if(has(/chips|nacho|baston|palito|bocadito|croqueta|aros? de|papas fritas|fries|bolita|snack|nugget|tequeno|picada|aperitivo/,n))c="Snacks y aperitivos";
+  else if(has(FISH,ing))c="Pescados y mariscos";
+  else if(has(CHICK,ing))c="Pollo y pavo";
+  else if(has(MEAT,ing))c="Carnes";
+  else if(has(/huevo/,ing)&&r.i.length<=5&&!has(/harina|avena|polvo de hornear|levadura/,ing))c="Huevos";
+  else c="Verduras y guarniciones";
+  r.c=c;
+  const spicy=/picante|habanero|sriracha|chile|jalapeno|aji molido|cayena/.test(all);
+  const alcohol=/vino|cerveza|whisky|licor|\bron\b|vodka/.test(all);
+  const sugary=/azucar(?! moreno| de cana| mascabo)|caramelo|crema batida|dulce de leche|nutella|helado|chantilly|leche condensada/.test(all);
+  const okTime=!r.m||r.m<=35;
+  r.v="";
+  if(!spicy&&!alcohol&&r.fryer&&okTime&&r.i.length>=2){
+    if(["Pollo y pavo","Pescados y mariscos","Carnes","Huevos","Legumbres y veggie","Pastas, pizzas y masas"].includes(c))r.v="m";
+    else if(c==="Verduras y guarniciones"&&/queso|ricota|ricotta|huevo|atun|jamon|pollo|garbanzo|lenteja/.test(ing))r.v="m";
+    else if((c==="Desayunos y meriendas"||c==="Snacks y aperitivos"||c==="Dulces y postres")&&!sugary&&/avena|banana|platano|manzana|zanahoria|yogur|pera|calabaza|frutos|arandano|nuez|almendra|integral|queso|huevo|batata|boniato/.test(ing)&&!/brownie|coulant|flan|cheesecake|churro/.test(n))r.v="s";
+  }
+  return r;
+}
+
+/* ============ estado ============ */
+const store={get(k,d){try{const v=localStorage.getItem("mf2_"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("mf2_"+k,JSON.stringify(v))}catch(e){}}};
+const S={tab:"inicio",q:"",cat:null,fv:false,fq:false,limit:36,have:store.get("have",[]),favs:store.get("favs",[]),week:store.get("week",null),shop:store.get("shop",{}),sheet:null};
+let R=[],BYID={},IMPORTED={},BOOKS=[],ST={},BUSY=false,NEEDS_RELOAD=[];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isFav=id=>S.favs.includes(id);
+const fmtN=n=>n.toLocaleString("es-UY");
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600);}
+
+const slug=x=>NORM(x).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48);
+function rebuild(){
+  const all=[];const seen=new Map();
+  Object.entries(IMPORTED).forEach(([fid,list])=>list.forEach(r=>{
+    classify(r);
+    const key=slug(r.n)+"|"+slug((r.i[0]||"")).slice(0,16);
+    const prev=seen.get(key);
+    if(prev){if((r.i.length+r.s.length)>(prev.i.length+prev.s.length)){all[all.indexOf(prev)]=r;seen.set(key,r);}return;}
+    seen.set(key,r);all.push(r);
+  }));
+  const used=new Set();all.forEach(r=>{const base=(r.fid||"x").slice(-5)+"-"+slug(r.n);let id=base,k=2;while(used.has(id))id=base+"-"+(k++);used.add(id);r.id=id;
+    if(!r.tags){const txt=NORM(r.i.join(" "));r.tags=ING.filter(([,re])=>re.test(txt)).map(([k])=>k);}});
+  R=all.sort((a,b)=>a.n.localeCompare(b.n,"es"));BYID=Object.fromEntries(R.map(r=>[r.id,r]));
+  if(S.week&&S.week.some(x=>!BYID[x.m]||!BYID[x.s]))S.week=null;
+  const lc=$("#libcount");if(lc)lc.textContent=R.length?fmtN(R.length)+" recetas":"Libros";
+}
+
+/* ============ heladera ============ */
+const ING=[
+ ["pollo",/pollo|pechuga|suprema|muslo/,"Proteínas"],["pavo",/pavo/,"Proteínas"],["carne picada",/carne picada|picada de (vaca|res)/,"Proteínas"],["carne",/bife|nalga|cuadril|lomo|ternera|carne en|filetes? de carne|bola de lomo/,"Proteínas"],["cerdo",/cerdo|bondiola/,"Proteínas"],
+ ["merluza",/merluza/,"Proteínas"],["salmón",/salmon/,"Proteínas"],["atún",/atun/,"Proteínas"],["otros pescados",/trucha|dorada|caballa|sardina|lenguado|brotola|bacalao/,"Proteínas"],["huevo",/huevo|claras?\b/,"Proteínas"],["jamón",/jamon/,"Proteínas"],["garbanzos",/garbanzo/,"Proteínas"],["lentejas",/lenteja/,"Proteínas"],
+ ["papa",/\bpapas?\b|patata/,"Verduras"],["batata",/batata|boniato/,"Verduras"],["zapallito",/zapallito|calabacin|zucchini/,"Verduras"],["calabaza",/calabaza|zapallo\b|cabutia|anco/,"Verduras"],["zanahoria",/zanahoria/,"Verduras"],["cebolla",/cebolla/,"Verduras"],["morrón",/morron|pimiento/,"Verduras"],["tomate",/tomate/,"Verduras"],["espinaca",/espinaca/,"Verduras"],["acelga",/acelga/,"Verduras"],["brócoli",/brocoli/,"Verduras"],["coliflor",/coliflor/,"Verduras"],["berenjena",/berenjena/,"Verduras"],["champiñones",/champinon|hongo|portobello/,"Verduras"],["choclo",/choclo|maiz dulce/,"Verduras"],["palta",/palta|aguacate/,"Verduras"],
+ ["queso",/queso/,"Lácteos y frutas"],["ricota",/ricota|ricotta/,"Lácteos y frutas"],["yogur",/yogur/,"Lácteos y frutas"],["leche",/\bleche\b/,"Lácteos y frutas"],["banana",/banana|platano/,"Lácteos y frutas"],["manzana",/manzana/,"Lácteos y frutas"],["limón",/limon/,"Lácteos y frutas"],
+ ["avena",/avena/,"Despensa"],["harina",/harina/,"Despensa"],["pan",/\bpan\b|pan rallado|rebanada/,"Despensa"],["arroz",/arroz/,"Despensa"],["pasta",/pasta|fideo/,"Despensa"],["tapas o masa",/tapas?\b|masa|hojaldre|tortillas? integral/,"Despensa"]
+];
+
+/* ============ vistas ============ */
+const TABS=[["inicio","Inicio",IC.home],["recetas","Recetas",IC.book],["heladera","Heladera",IC.fridge],["viandas","Viandas",IC.lunch],["favoritas","Favoritas",IC.heart]];
+function renderTabs(){const h=TABS.map(([k,l,i])=>`<button class="tab" data-tab="${k}" aria-current="${S.tab===k?"page":"false"}">${i}${l}</button>`).join("");$("#bottomtabs").innerHTML=h;$("#sidetabs").innerHTML=h;}
+function meta(r){return `${r.t?`<span>${IC.temp}${r.t}°</span>`:""}${r.m?`<span>${IC.clock}${esc(r.mr||r.m)} min</span>`:""}${!r.fryer?`<span>Sin freidora</span>`:""}`;}
+function card(r,extra=""){
+  if(!r)return "";
+  return `<div class="card" role="button" tabindex="0" data-open="${esc(r.id)}">${icTile(r.c)}
+    <div class="body"><div class="t">${esc(r.n)}</div><div class="m"><span>${esc(r.c)}</span>${meta(r)}</div>${extra}</div>
+    <button class="fav" data-fav="${esc(r.id)}" aria-pressed="${isFav(r.id)}" aria-label="${isFav(r.id)?"Quitar de favoritas":"Guardar en favoritas"}">${IC.heart}</button></div>`;
+}
+function greeting(){const h=new Date().getHours();return h<6?"Buenas noches":h<13?"Buen día":h<20?"Buenas tardes":"Buenas noches";}
+const dayIdx=()=>{const d=new Date().getDay();return d>=1&&d<=5?d-1:-1;};
+function dailyPick(list,n){const seed=Math.floor(Date.now()/864e5);const out=[];if(!list.length)return out;let x=seed;const used=new Set();
+  for(let k=0;k<Math.min(n,list.length);k++){x=(x*9301+49297)%233280;let i=x%list.length;while(used.has(i))i=(i+1)%list.length;used.add(i);out.push(list[i]);}return out;}
+
+function vWelcome(){return `<div class="hero"><p class="eyebrow">${greeting()}</p><h1 class="h1" style="margin-top:4px">Tus recetas de freidora, en un solo lugar</h1>
+  <p class="lead">Cargá tus libros de recetas en PDF. La app los lee completos, ordena cada receta y las junta todas para buscar por nombre, por lo que tenés en la heladera o armar las viandas de la semana.</p></div>
+  <div class="welcome"><h2 class="h2">Para empezar</h2><ol><li>Tocá <b>Cargar libros</b>.</li><li>Elegí los PDF (podés entrar a tu Google Drive desde el selector).</li><li>Esperá a que termine de leerlos. Quedan guardados en este celular.</li></ol>
+  <button class="btn" data-libros>${IC.plus}Cargar libros</button></div>`;}
+
+function vInicio(){
+  if(!R.length)return vWelcome();
+  const cnt={};R.forEach(r=>cnt[r.c]=(cnt[r.c]||0)+1);
+  const di=dayIdx();if(!S.week&&mains().length>=5&&snacks().length>=5)buildWeek();
+  const today=di>=0&&S.week?S.week[di]:null;
+  const ideas=dailyPick(R.filter(r=>r.fryer&&r.i.length>=3&&r.s.length>=1),8);
+  return `<div class="hero"><p class="eyebrow">${greeting()}</p><h1 class="h1" style="margin-top:4px">¿Qué cocinamos hoy?</h1>
+    <div class="search" style="margin-top:14px">${IC.search}<input id="homeq" type="search" placeholder="Buscar entre ${fmtN(R.length)} recetas…" aria-label="Buscar recetas" enterkeyhint="search"></div>
+    <div class="quick">
+      <button class="qa" data-tab="heladera"><div class="ic" style="background:var(--basil-soft);color:var(--basil)">${IC.fridge}</div><b>Con lo que tengo</b><span>Elegí ingredientes y te digo qué hacer</span></button>
+      <button class="qa" data-tab="viandas"><div class="ic" style="background:var(--saffron-soft);color:var(--saffron)">${IC.lunch}</div><b>Viandas</b><span>Lunes a viernes, saludable</span></button>
+      <button class="qa" data-quick="rapidas"><div class="ic" style="background:var(--tomato-soft);color:var(--tomato)">${IC.bolt}</div><b>Algo rápido</b><span>Listo en 15 minutos o menos</span></button>
+    </div></div>
+  ${NEEDS_RELOAD.length?`<div class="banner"><span>Mejoramos el lector de libros. Volvé a cargar <b>${NEEDS_RELOAD.length===1?esc(NEEDS_RELOAD[0]):NEEDS_RELOAD.length+" libros"}</b> para corregir títulos y recetas.</span><button class="btn sm heat" data-libros>Ver libros</button></div>`:""}
+  ${today&&BYID[today.m]?`<div class="section"><div class="section-head"><h2 class="h2">Vianda de hoy</h2><button class="link" data-tab="viandas">Ver semana</button></div>
+    <div class="grid">${card(BYID[today.m],`<div class="extra"><span class="pill">Comida</span></div>`)}${card(BYID[today.s],`<div class="extra"><span class="pill s">Colación</span></div>`)}</div></div>`:""}
+  <div class="section"><div class="section-head"><h2 class="h2">Categorías</h2><button class="link" data-tab="recetas">Ver todas</button></div>
+    <div class="cats">${CATS.filter(c=>cnt[c.k]).map(c=>`<button class="cat" data-cat="${esc(c.k)}">${icTile(c.k)}<div style="min-width:0"><b>${esc(c.k)}</b><small class="num">${fmtN(cnt[c.k])} ${cnt[c.k]===1?"receta":"recetas"}</small></div></button>`).join("")}</div></div>
+  ${ideas.length?`<div class="section"><div class="section-head"><h2 class="h2">Ideas para hoy</h2></div><div class="hscroll">${ideas.map(r=>card(r)).join("")}</div></div>`:""}`;
+}
+
+function filtered(){
+  const q=NORM(S.q).trim();const qt=q.split(/\s+/).filter(Boolean);
+  const res=R.filter(r=>(!S.cat||r.c===S.cat)&&(!S.fv||r.v==="m"||r.v==="s")&&(!S.fq||(r.m&&r.m<=15))
+    &&(!qt.length||qt.every(w=>(r._s||(r._s=NORM(r.n+" "+r.i.join(" ")+" "+r.c))).includes(w))));
+  if(q)res.sort((a,b)=>(NORM(a.n).includes(q)?0:1)-(NORM(b.n).includes(q)?0:1)||a.n.localeCompare(b.n,"es"));
+  return res;
+}
+function listHTML(){const res=filtered();
+  return `<p class="eyebrow num" style="margin:14px 0 10px">${fmtN(res.length)} ${res.length===1?"receta":"recetas"}</p>`+
+    (res.length?`<div class="grid">${res.slice(0,S.limit).map(r=>card(r)).join("")}</div>`+(res.length>S.limit?`<div style="text-align:center;margin-top:16px"><button class="btn ghost" data-more>Ver más recetas</button></div>`:""):
+    `<div class="empty"><b>No hay recetas con esa búsqueda</b>Probá con otra palabra o sacá algún filtro.</div>`);}
+function vRecetas(){
+  if(!R.length)return vWelcome();
+  const cnt={};R.forEach(r=>cnt[r.c]=(cnt[r.c]||0)+1);
+  return `<h1 class="h1">Recetas</h1><p class="lead">Todas las recetas de tus libros, juntas.</p>
+  <div class="search" style="margin-top:14px">${IC.search}<input id="q" type="search" placeholder="Buscar: pollo, muffins, atún…" value="${esc(S.q)}" aria-label="Buscar recetas" enterkeyhint="search"></div>
+  <div class="chips" style="margin-top:12px"><button class="chip" data-cat="" aria-pressed="${!S.cat}">Todas<span class="c num">${fmtN(R.length)}</span></button>${CATS.filter(c=>cnt[c.k]).map(c=>`<button class="chip" data-cat="${esc(c.k)}" aria-pressed="${S.cat===c.k}">${esc(c.k)}<span class="c num">${fmtN(cnt[c.k])}</span></button>`).join("")}</div>
+  <div class="chips wrapit" style="margin-top:4px"><button class="chip" data-flag="fv" aria-pressed="${S.fv}">Aptas para vianda</button><button class="chip" data-flag="fq" aria-pressed="${S.fq}">Rápidas (15 min o menos)</button></div>
+  <div id="rlist">${listHTML()}</div>`;
+}
+
+function vHeladera(){
+  if(!R.length)return vWelcome();
+  const have=new Set(S.have);
+  const res=have.size?R.filter(r=>r.tags.some(t=>have.has(t))).map(r=>{const ok=r.tags.filter(t=>have.has(t)),miss=r.tags.filter(t=>!have.has(t));return {r,ok,miss};})
+    .sort((a,b)=>a.miss.length-b.miss.length||b.ok.length-a.ok.length||a.r.n.localeCompare(b.r.n,"es")):[];
+  const ready=res.filter(x=>!x.miss.length).length;
+  const groups={};ING.forEach(([k,,g])=>(groups[g]=groups[g]||[]).push(k));
+  return `<h1 class="h1">¿Qué hay en la heladera?</h1><p class="lead">Tocá lo que tenés. Primero aparecen las recetas que podés hacer ya; después, las que necesitan una o dos cosas más. Sal, aceite y condimentos se dan por hechos.</p>
+  ${Object.entries(groups).map(([g,ks])=>`<div class="group"><p class="eyebrow">${g}</p><div class="chips wrapit">${ks.map(k=>`<button class="chip" data-have="${esc(k)}" aria-pressed="${have.has(k)}">${esc(k)}</button>`).join("")}</div></div>`).join("")}
+  <div class="section-head" style="margin-top:20px"><p class="eyebrow num">${have.size?`${fmtN(ready)} listas para hacer · ${fmtN(res.length)} posibles`:"Elegí al menos un ingrediente"}</p>${have.size?`<button class="link" data-clear>Borrar selección</button>`:""}</div>
+  ${res.length?`<div class="grid">${res.slice(0,S.limit).map(x=>card(x.r,x.miss.length?`<div class="extra miss">Te falta: ${esc(x.miss.join(", "))}</div>`:`<div class="extra have">Tenés todo lo principal</div>`)).join("")}</div>${res.length>S.limit?`<div style="text-align:center;margin-top:16px"><button class="btn ghost" data-more>Ver más</button></div>`:""}`:
+    `<div class="empty"><b>${have.size?"No encontré recetas":"Contame qué tenés"}</b>${have.size?"Probá agregando otro ingrediente.":"Elegí ingredientes de arriba y te muestro qué cocinar."}</div>`}`;
+}
+
+/* viandas */
+const DAYS=["Lunes","Martes","Miércoles","Jueves","Viernes"];
+const good=r=>r.i.length>=3&&r.s.length>=1&&r.q!==0;
+const mains=()=>R.filter(r=>r.v==="m"&&good(r)),snacks=()=>R.filter(r=>r.v==="s"&&good(r));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const proteinOf=r=>({"Pollo y pavo":"pollo","Pescados y mariscos":"pescado","Carnes":"carne","Huevos":"huevo","Legumbres y veggie":"legumbre","Pastas, pizzas y masas":"masa"}[r.c]||"verdura");
+function buildWeek(){
+  const M=mains(),Sn=snacks();if(M.length<5||Sn.length<5){S.week=null;return;}
+  let order=["pollo","pescado","verdura","carne","huevo","legumbre","masa"].sort(()=>Math.random()-.5).slice(0,5);
+  if(!order.includes("pescado"))order[0]="pescado";if(!order.includes("verdura")&&!order.includes("legumbre"))order[1]="verdura";
+  const used=new Set(),w=[];
+  for(let d=0;d<5;d++){const pool=M.filter(r=>proteinOf(r)===order[d]&&!used.has(r.id));const m=pick(pool.length?pool:M.filter(r=>!used.has(r.id)));used.add(m.id);
+    const s=pick(Sn.filter(r=>!used.has(r.id)));used.add(s.id);w.push({m:m.id,s:s.id});}
+  S.week=w;S.shop={};store.set("week",w);store.set("shop",{});
+}
+function swap(d,slot){const used=new Set(S.week.flatMap(x=>[x.m,x.s]));const cur=BYID[S.week[d][slot]];
+  const pool=(slot==="m"?mains():snacks()).filter(r=>!used.has(r.id));const same=pool.filter(r=>slot!=="m"||proteinOf(r)===proteinOf(cur));
+  if(!pool.length)return;S.week[d][slot]=pick(same.length>3?same:pool).id;store.set("week",S.week);}
+function vViandas(){
+  if(!R.length)return vWelcome();
+  if(mains().length<5||snacks().length<5)return `<h1 class="h1">Viandas de la semana</h1><div class="empty" style="margin-top:16px"><b>Faltan recetas</b>Cargá más libros desde «Mis libros» para armar la semana.</div>`;
+  if(!S.week)buildWeek();
+  const di=dayIdx();const items=[];const seen=new Set();
+  S.week.forEach(x=>[x.m,x.s].forEach(id=>BYID[id].i.forEach(line=>{if(/^(sal|pimienta|sal y|agua\b)/i.test(line)||/:\s*$/.test(line))return;const k=NORM(line);if(seen.has(k))return;seen.add(k);items.push({line,from:BYID[id].n});})));
+  const info=r=>[r.t?r.t+"°":"",r.m?(r.mr||r.m)+" min":"",r.c].filter(Boolean).join(" · ");
+  return `<h1 class="h1">Viandas de la semana</h1>
+  <p class="lead">Una comida y una colación por día para llevar al colegio. Cambia la proteína cada día, siempre hay pescado y verduras, y todo se come bien frío o tibio.</p>
+  <div style="margin-top:14px"><button class="btn" data-newweek>${IC.swap}Armar otra semana</button></div>
+  <div class="week" style="margin-top:16px">${S.week.map((x,d)=>{const m=BYID[x.m],s=BYID[x.s];return `<div class="day ${d===di?"today":""}">
+    <h3>${DAYS[d]}${d===di?`<span class="pill">Hoy</span>`:""}</h3>
+    <div class="slot"><button class="nm" data-open="${esc(m.id)}"><span class="pill">Comida</span><b>${esc(m.n)}</b><small>${esc(info(m))}</small></button><button class="swap" data-swap="${d}|m" aria-label="Cambiar la comida del ${DAYS[d]}">${IC.swap}Cambiar</button></div>
+    <div class="slot"><button class="nm" data-open="${esc(s.id)}"><span class="pill s">Colación</span><b>${esc(s.n)}</b><small>${esc(info(s))}</small></button><button class="swap" data-swap="${d}|s" aria-label="Cambiar la colación del ${DAYS[d]}">${IC.swap}Cambiar</button></div>
+  </div>`}).join("")}</div>
+  <div class="note"><b>Para la vianda:</b> cociná la noche anterior, dejá enfriar destapado y guardá en la heladera en el táper. Las colaciones se pueden hacer el domingo para toda la semana.</div>
+  <div class="section"><div class="section-head"><h2 class="h2">Lista de compras</h2><span class="eyebrow num">${items.length} cosas</span></div>
+  <div class="shop">${items.map((x,k)=>{const on=!!S.shop[x.line];return `<label><input type="checkbox" id="sh${k}" data-shop="${esc(x.line)}" ${on?"checked":""}><span class="${on?"done":""}">${esc(x.line)}<br><small style="color:var(--muted)">${esc(x.from)}</small></span></label>`}).join("")}</div></div>`;
+}
+function vFavoritas(){
+  const res=S.favs.map(id=>BYID[id]).filter(Boolean);
+  return `<h1 class="h1">Favoritas</h1><p class="lead">Las que más les gustaron, siempre a mano.</p>
+  <div style="margin-top:16px">${res.length?`<div class="grid">${res.map(r=>card(r)).join("")}</div>`:`<div class="empty"><b>Todavía no guardaste ninguna</b>Tocá el corazón de una receta para guardarla acá.</div>`}</div>`;
+}
+
+/* ficha */
+function openRecipe(id){
+  const r=BYID[id];if(!r)return;S.sheet="receta";
+  const ingHTML=r.i.map((x,k)=>/:\s*$/.test(x)?`<li class="sub">${esc(x)}</li>`:`<li><label><input type="checkbox" id="ing${k}"><span>${esc(x)}</span></label></li>`).join("");
+  const stepsTxt=r.s.slice();const mentions=stepsTxt.some(x=>/°|grados|\d\s*min/i.test(x));
+  if(r.t&&r.m&&!mentions)stepsTxt.push(`Cociná a ${r.t} °C durante ${r.mr||r.m} minutos${r.flip?", dando vuelta o agitando la canasta a mitad de tiempo":""}.`);
+  const por=r.por?r.por.replace(/^para\s+/i,""):"";
+  $("#panel").innerHTML=`<div class="sheetbar"><button class="back" data-close>${IC.back}Volver</button>
+    <button class="fav" style="position:static" data-fav="${esc(r.id)}" aria-pressed="${isFav(r.id)}" aria-label="${isFav(r.id)?"Quitar de favoritas":"Guardar en favoritas"}">${IC.heart}</button></div>
+    <div style="display:flex;gap:12px;align-items:center">${icTile(r.c)}<p class="eyebrow">${esc(r.c)}${r.v==="m"?" · apta para vianda":r.v==="s"?" · colación":""}</p></div>
+    <h1 class="h1" style="margin-top:10px">${esc(r.n)}</h1>
+    <div class="stats">
+      <div class="stat ${r.t?"":"off"}"><b class="num">${r.t?r.t+"°":r.fryer?"—":"No usa"}</b><span>${r.t||r.fryer?"temperatura":"freidora"}</span></div>
+      <div class="stat ${r.m?"":"off"}"><b class="num">${r.m?esc(r.mr||r.m):"—"}</b><span>minutos</span></div>
+      <div class="stat ${por?"":"off"}"><b style="font-size:${por.length>12?"1rem":"1.45rem"}">${por?esc(por):"—"}</b><span>porción</span></div>
+    </div>
+    ${r.m?`<button class="btn heat" style="width:100%" data-timer="${esc(r.id)}">${IC.play}Empezar temporizador · ${r.m} min</button>
+    ${r.fryer?`<p class="meta-line" style="margin-top:8px;text-align:center">Precalentá la freidora 3 a 5 minutos antes.</p>`:""}`:""}
+    <div class="section" style="margin-top:22px"><h2 class="h2">Ingredientes</h2><ul class="ing">${ingHTML}</ul></div>
+    ${stepsTxt.length?`<div class="section"><h2 class="h2">Preparación</h2><ol class="steps">${stepsTxt.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`:""}
+    ${r.tip?`<div class="box tip"><b>Consejo</b>${esc(r.tip)}</div>`:""}
+    ${r.warn?`<div class="box warn"><b>Atención</b>${esc(r.warn)}</div>`:""}
+    ${r.res?`<p class="meta-line"><b>Resultado:</b> ${esc(r.res)}</p>`:""}
+    ${r.nut?`<p class="meta-line"><b>Nutrición:</b> ${esc(r.nut)}</p>`:""}
+    <p class="meta-line">Del libro «${esc(r.b)}»</p>`;
+  $("#sheet").hidden=false;$("#panel").scrollTop=0;
+  if(!(history.state&&history.state.sheet))history.pushState({sheet:1},"","#receta");
+}
+function closeSheet(fromPop){if($("#sheet").hidden)return;$("#sheet").hidden=true;S.sheet=null;if(!fromPop&&history.state&&history.state.sheet){skipPop=true;history.back();}render();}
+let skipPop=false;
+window.addEventListener("popstate",()=>{if(skipPop){skipPop=false;return;}if(!$("#timer").hidden){clearInterval(T);$("#timer").hidden=true;keepAwake(false);return;}closeSheet(true);});
+
+/* ============ libros ============ */
 const IDB={db:null,open(){return this.db?Promise.resolve(this.db):new Promise((ok,ko)=>{const rq=indexedDB.open("mi-freidora",2);
-  rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains("libros"))d.createObjectStore("libros",{keyPath:"fileId"});if(!d.objectStoreNames.contains("ocr"))d.createObjectStore("ocr",{keyPath:"key"});};rq.onsuccess=()=>{this.db=rq.result;ok(this.db)};rq.onerror=()=>ko(rq.error);});},
-  async tx(mode,fn){const db=await this.open();return new Promise((ok,ko)=>{const t=db.transaction("libros",mode);const r=fn(t.objectStore("libros"));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>ko(t.error);});},
-  put(v){return this.tx("readwrite",st=>st.put(v))},del(k){return this.tx("readwrite",st=>st.delete(k))},all(){return this.tx("readonly",st=>st.getAll())}};
-const OCRSTORE={async run(mode,fn){const db=await IDB.open();return new Promise((ok,ko)=>{const t=db.transaction("ocr",mode);const r=fn(t.objectStore("ocr"));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>ko(t.error);});},
-  get(k){return this.run("readonly",st=>st.get(k)).catch(()=>null)},put(v){return this.run("readwrite",st=>st.put(v))},del(k){return this.run("readwrite",st=>st.delete(k)).catch(()=>{})}};
-async function saveBook(fileId,title,recipes,mb){await IDB.put({fileId,title,mb,recipes,savedAt:Date.now()});try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}return true;}
-async function importBytes(fileId,title,bytes){
-  ST[fileId]={state:"busy",msg:"Leyendo páginas…"};renderLibros();
-  const key=fileId+"|"+bytes.length;let t0=Date.now(),ocrDone=0;
+  rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains("libros"))d.createObjectStore("libros",{keyPath:"fileId"});if(!d.objectStoreNames.contains("ocr"))d.createObjectStore("ocr",{keyPath:"key"});};
+  rq.onsuccess=()=>{this.db=rq.result;ok(this.db)};rq.onerror=()=>ko(rq.error);});},
+  async tx(st,mode,fn){const db=await this.open();return new Promise((ok,ko)=>{const t=db.transaction(st,mode);const r=fn(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>ko(t.error);});},
+  put(v){return this.tx("libros","readwrite",s=>s.put(v))},del(k){return this.tx("libros","readwrite",s=>s.delete(k))},all(){return this.tx("libros","readonly",s=>s.getAll())},
+  ocrGet(k){return this.tx("ocr","readonly",s=>s.get(k)).catch(()=>null)},ocrPut(v){return this.tx("ocr","readwrite",s=>s.put(v)).catch(()=>{})},ocrDel(k){return this.tx("ocr","readwrite",s=>s.delete(k)).catch(()=>{})}};
+
+/* lee el texto de una página en orden visual (arriba→abajo, y por columnas) */
+function pageText(tc,W){
+  const items=tc.items.filter(it=>it.str&&it.str.trim()).map(it=>({s:it.str,x:it.transform[4],y:it.transform[5],w:it.width||0,h:Math.abs(it.transform[3])||it.height||10}));
+  items.sort((a,b)=>b.y-a.y||a.x-b.x);
+  const rows=[];
+  for(const it of items){const row=rows.length?rows[rows.length-1]:null;if(row&&Math.abs(row.y-it.y)<=Math.max(2.5,it.h*0.45)){row.items.push(it);}else rows.push({y:it.y,items:[it]});}
+  const segs=[];
+  rows.forEach(row=>{row.items.sort((a,b)=>a.x-b.x);let cur=null;
+    for(const it of row.items){const gap=cur?it.x-cur.x1:0;
+      if(cur&&gap>Math.max(it.h*2.5,W*0.06)){segs.push(cur);cur=null;}
+      if(!cur)cur={y:row.y,x0:it.x,x1:it.x+it.w,t:it.s};else{cur.t+=(gap>it.h*0.15&&!/\s$/.test(cur.t)&&!/^\s/.test(it.s)?" ":"")+it.s;cur.x1=it.x+it.w;}}
+    if(cur)segs.push(cur);});
+  const out=[];let L=[],Rr=[];const mid=W/2;
+  const flush=()=>{out.push(...L.map(s=>s.t),...Rr.map(s=>s.t));L=[];Rr=[];};
+  segs.forEach(s=>{const full=s.x0<mid*0.9&&s.x1>mid*1.1;if(full){flush();out.push(s.t);}else if(s.x0<mid)L.push(s);else Rr.push(s);});
+  flush();
+  return out.map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
+}
+let OCRW=null,WAKE=null;
+function loadScript(src){return new Promise((ok,ko)=>{const el=document.createElement("script");el.src=src;el.onload=ok;el.onerror=()=>ko(new Error("No se pudo descargar el lector de imágenes. Revisá la conexión a internet."));document.head.appendChild(el);});}
+async function ocrWorker(){if(OCRW)return OCRW;if(!window.Tesseract)await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");OCRW=await Tesseract.createWorker("spa");return OCRW;}
+async function keepAwake(on){try{if(on&&navigator.wakeLock&&!WAKE)WAKE=await navigator.wakeLock.request("screen");if(!on&&WAKE){await WAKE.release();WAKE=null;}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&BUSY){WAKE=null;keepAwake(true);}});
+const goodOcr=t=>{t=t.replace(/\s+/g," ").trim();if(t.length<2)return false;const n=(t.match(/[\p{L}\p{N}]/gu)||[]).length;return n/t.length>=0.55;};
+async function ocrPage(page){
+  const v1=page.getViewport({scale:1});const sc=Math.min(2.5,1700/v1.width);const vp=page.getViewport({scale:sc});
+  const c=document.createElement("canvas");c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:ctx,viewport:vp}).promise;const w=await ocrWorker();const {data}=await w.recognize(c);c.width=c.height=0;
+  const ls=(data.lines&&data.lines.length)?data.lines.filter(l=>l.confidence==null||l.confidence>=45).map(l=>l.text):String(data.text||"").split("\n");
+  return ls.map(x=>x.replace(/\s+/g," ").trim()).filter(goodOcr);
+}
+async function pdfLines(bytes,onp,key){
+  if(!window.pdfjsLib)throw new Error("No se pudo cargar el lector de PDF. Revisá la conexión a internet y volvé a abrir la app.");
+  const doc=await pdfjsLib.getDocument({data:bytes}).promise;const lines=[];
+  const saved=key?await IDB.ocrGet(key):null;const po=(saved&&saved.pages)||{};let ocrN=0;
+  for(let p=1;p<=doc.numPages;p++){
+    const page=await doc.getPage(p);const W=page.getViewport({scale:1}).width;const tc=await page.getTextContent();
+    let pl=pageText(tc,W);lines.push("§PAGE "+p);
+    if(pl.join("").replace(/\s/g,"").length<60){
+      if(po[p]){pl=po[p];onp(p,doc.numPages,"ocr-cached");}
+      else{onp(p,doc.numPages,"ocr");await keepAwake(true);pl=await ocrPage(page);po[p]=pl;if(key)await IDB.ocrPut({key,pages:po});}
+      ocrN++;
+    }else onp(p,doc.numPages,"text");
+    lines.push(...pl);page.cleanup&&page.cleanup();
+  }
+  return {lines,pages:doc.numPages,ocrN};
+}
+function finish(fileId,title,lines){const recs=parseBook(lines,title,fileId);recs.forEach(r=>{r.fid=fileId;classify(r);});return recs;}
+async function importBytes(fileId,title,bytes,mb){
+  BUSY=true;const key=fileId+"|"+bytes.length;const t0=Date.now();let ocrDone=0;
+  ST[fileId]={state:"busy",msg:"Abriendo el PDF…",pct:0};renderLibros();
   let out;
   try{out=await pdfLines(bytes,(p,n,mode)=>{
-    if(mode==="ocr"){ocrDone++;const per=(Date.now()-t0)/Math.max(1,ocrDone);const left=Math.max(1,Math.round(per*(n-p)/60000));
-      ST[fileId]={state:"busy",msg:`Leyendo imágenes: página ${p} de ${n} · faltan unos ${left} min. Dejá la app abierta y la pantalla prendida.`};renderLibros();}
-    else{ST[fileId]={state:"busy",msg:`Leyendo página ${p} de ${n}`};if(p%5===0||p===n)renderLibros();}
-  },key);}catch(e){await keepAwake(false);ST[fileId]={state:"err",msg:(e&&e.message)||"No se pudo leer este PDF."};renderLibros();return;}
+      const pct=Math.round(p/n*100);
+      if(mode==="ocr"){ocrDone++;const per=(Date.now()-t0)/ocrDone;const left=Math.max(1,Math.round(per*(n-p)/60000));ST[fileId]={state:"busy",pct,msg:`Leyendo imágenes: página ${p} de ${n} · faltan unos ${left} min. Dejá la app abierta.`};renderLibros();}
+      else{ST[fileId]={state:"busy",pct,msg:`Leyendo página ${p} de ${n}`};if(p%4===0||p===n)renderLibros();}
+    },key);}
+  catch(e){await keepAwake(false);BUSY=false;ST[fileId]={state:"err",msg:(e&&e.message)||"No se pudo leer este PDF."};renderLibros();return;}
   await keepAwake(false);
-  const {lines,pages,ocrCount}=out;
-  const recs=parseBook(lines,title,fileId);
-  if(!recs.length){ST[fileId]={state:"err",msg:ocrCount?"Leí las imágenes pero no encontré recetas con el formato esperado.":"No encontré recetas con el formato esperado."};renderLibros();return;}
-  OCRSTORE.del(key);
-  IMPORTED[fileId]=recs;rebuild();
-  ST[fileId]={state:"busy",msg:`Guardando ${recs.length} recetas…`};renderLibros();
-  let saved=false;try{saved=await saveBook(fileId,title,recs,(BOOKS.find(b=>b.id===fileId)||{}).mb);}catch(e){ST[fileId]={state:"ok",n:recs.length,msg:"Cargado, pero no se pudo guardar: "+(e.message||e.code||"error")};renderLibros();render();return;}
-  ST[fileId]={state:"ok",n:recs.length,msg:saved?"":"Cargado solo en esta pantalla (no se pudo guardar)"};renderLibros();render();
+  const recs=finish(fileId,title,out.lines);
+  if(!recs.length){BUSY=false;ST[fileId]={state:"err",msg:out.ocrN?"Leí las páginas pero no encontré recetas (no aparece la palabra «Ingredientes»).":"No encontré recetas en este PDF (no aparece la palabra «Ingredientes»)."};renderLibros();return;}
+  IMPORTED[fileId]=recs;NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==title);rebuild();
+  try{await IDB.put({fileId,title,mb,lines:out.lines,pv:PARSER_VERSION,recipes:recs,savedAt:Date.now()});IDB.ocrDel(key);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+    ST[fileId]={state:"ok",n:recs.length};}
+  catch(e){ST[fileId]={state:"ok",n:recs.length,msg:"Se cargó, pero no se pudo guardar en el celular (puede faltar espacio)."};}
+  BUSY=false;renderLibros();render();toast(`${fmtN(recs.length)} recetas de «${title}»`);
 }
 function renderLibros(){
-  if(S.sheet!=="libros")return;const sh=$("#sheet");
+  if(S.sheet!=="libros")return;
   const total=Object.values(IMPORTED).reduce((a,x)=>a+x.length,0);
-  const chip=st=>!st?"":st.state==="busy"?`<span class="have" style="color:var(--heat)">${esc(st.msg)}</span>`:
-    st.state==="ok"?`<span class="have">${st.n} recetas</span>${st.msg?`<br><span class="sub">${esc(st.msg)}</span>`:""}`:`<span class="miss" style="color:var(--danger)">${esc(st.msg)}</span>`;
-  sh.innerHTML=`<div class="wrap">
-    <button class="back" data-close>‹ Volver</button>
-    <h2 style="font-size:1.6rem">Mis libros</h2>
-    <p class="lead">Elegí los PDF de recetas. En el selector del teléfono podés entrar a tu Google Drive o a Descargas. La app los lee completos y guarda todas las recetas en este celular, para usarlas aunque no tengas internet.</p>
-    <label class="btn" for="pick" style="display:block;text-align:center">Elegir libros (PDF)</label>
+  const row=b=>{const st=ST[b.id]||{};return `<div class="book"><div class="bt" style="flex:1">
+      <b>${esc(b.t)}</b><small>${st.state==="ok"?`<span class="have">${fmtN(st.n)} recetas</span>${st.reload?` · <span style="color:var(--tomato)">volvé a cargarlo para corregir títulos</span>`:""}${st.msg?` · ${esc(st.msg)}`:""}`:st.state==="busy"?esc(st.msg):st.state==="err"?`<span style="color:var(--tomato)">${esc(st.msg)}</span>`:""}${b.mb?` · ${b.mb} MB`:""}</small>
+      ${st.state==="busy"?`<div class="bar"><i style="width:${st.pct||2}%"></i></div>`:""}</div>
+      ${st.state==="ok"||st.state==="err"?`<button class="btn ghost sm" data-delbook="${esc(b.id)}">Quitar</button>`:""}</div>`;};
+  $("#panel").innerHTML=`<div class="sheetbar"><button class="back" data-close>${IC.back}Volver</button></div>
+    <h1 class="h1">Mis libros</h1>
+    <p class="lead">Elegí los PDF de recetas: en el selector del teléfono podés entrar a Google Drive o a Descargas. La app lee cada libro completo, ordena título, ingredientes y pasos, y comprueba que el título coincida con la receta. Todo queda guardado en este celular y funciona sin internet.</p>
+    <label class="btn" for="pick" style="margin-top:16px;width:100%">${IC.plus}Agregar libros (PDF)</label>
     <input type="file" id="pick" accept="application/pdf" multiple hidden>
-    <p class="sub" style="margin:8px 0 0">${total?`${total} recetas cargadas.`:"Todavía no cargaste ningún libro."} ${esc(dbNote)}</p>
-    <div class="list">${BOOKS.map(b=>`<div class="day">
-      <h3 style="font-size:1rem">${esc(b.t)}<span class="sub">${b.mb?b.mb+" MB":""}</span></h3>
-      <div class="row" style="justify-content:space-between"><div style="min-width:0;flex:1">${chip(ST[b.id])}</div>
-      ${ST[b.id]&&ST[b.id].state==="ok"?`<button class="btn ghost sm" data-delbook="${esc(b.id)}">Quitar</button>`:""}</div></div>`).join("")}</div>
-    <p class="sub" style="margin-top:18px">Los libros escaneados o hechos con imágenes también se pueden cargar: la app lee el texto de cada página. Tarda más (unos segundos por página) y hace falta internet la primera vez. Si se corta, volvé a elegir el mismo PDF y sigue desde donde quedó.</p>
-  </div>`;
+    <p class="eyebrow num" style="margin:18px 0 10px">${total?`${fmtN(R.length)} recetas únicas de ${BOOKS.length} ${BOOKS.length===1?"libro":"libros"}`:"Todavía no cargaste ningún libro"}</p>
+    <div style="display:grid;gap:8px">${BOOKS.map(row).join("")}</div>
+    <p class="meta-line" style="margin-top:18px">Los libros escaneados o hechos con imágenes también se pueden cargar: la app lee el texto de cada página (tarda unos segundos por página y la primera vez necesita internet). Si se corta, elegí el mismo PDF otra vez y sigue donde quedó.</p>`;
 }
-function openLibros(){S.sheet="libros";$("#sheet").hidden=false;renderLibros();$("#sheet").scrollTop=0;}
+function openLibros(){S.sheet="libros";$("#sheet").hidden=false;renderLibros();$("#panel").scrollTop=0;if(!(history.state&&history.state.sheet))history.pushState({sheet:1},"","#libros");}
 async function loadSaved(){
   try{const rows=await IDB.all()||[];
-    rows.forEach(x=>{const recs=x.recipes||[];recs.forEach(r=>{r.tags=null});IMPORTED[x.fileId]=recs;ST[x.fileId]={state:"ok",n:recs.length};
-      if(!BOOKS.some(b=>b.id===x.fileId))BOOKS.push({id:x.fileId,t:x.title,mb:x.mb});});
+    for(const x of rows){
+      let recs=x.recipes||[];let reload=false;
+      if(x.lines&&x.pv!==PARSER_VERSION){recs=finish(x.fileId,x.title,x.lines);IDB.put({...x,pv:PARSER_VERSION,recipes:recs}).catch(()=>{});}
+      else if(!x.lines){reload=true;recs.forEach(r=>{r.ch=r.ch||r.c||"";r.fryer=r.fryer??!!r.t;r.warn=r.warn||"";r.nut=r.nut||"";r.i=r.i||[];r.s=r.s||[];});}
+      recs.forEach(r=>{r.fid=r.fid||x.fileId;r.tags=null;});
+      IMPORTED[x.fileId]=recs;ST[x.fileId]={state:"ok",n:recs.length,reload};
+      if(reload)NEEDS_RELOAD.push(x.title);
+      if(!BOOKS.some(b=>b.id===x.fileId))BOOKS.push({id:x.fileId,t:x.title,mb:x.mb});
+    }
     rebuild();render();renderLibros();
-  }catch(e){dbNote="No se pudieron leer los libros guardados en este celular.";}
+  }catch(e){toast("No se pudieron leer los libros guardados en este celular.");render();}
 }
 
-/* ---------- FAVORITAS ---------- */
-function vFavs(){
-  const res=S.favs.map(id=>BYID[id]).filter(Boolean);
-  return `<h2>Favoritas</h2><p class="lead">Las que más les gustaron, a mano.</p>
-  <div class="list">${res.length?res.map(r=>card(r)).join(""):`<div class="empty">Tocá el corazón ♡ de una receta para guardarla acá.</div>`}</div>`;
-}
-
-/* ---------- FICHA ---------- */
-function openRecipe(id){
-  const r=BYID[id];const sh=$("#sheet");
-  sh.innerHTML=`<div class="wrap">
-    <div class="row" style="justify-content:space-between"><button class="back" data-close>‹ Volver</button>
-    <button class="fav" data-fav="${r.id}" aria-pressed="${isFav(r.id)}" aria-label="Favorita">${isFav(r.id)?"♥":"♡"}</button></div>
-    <span class="label">${esc(r.c)}${r.v==="m"?" · apta vianda":r.v==="s"?" · colación":""}</span>
-    <h2 style="font-size:1.7rem">${esc(r.n)}</h2>
-    <div class="heatbar"><div><b>${r.t?r.t+" °C":"—"}</b><span class="sub">temperatura</span></div><div><b>${r.m?(r.mr||r.m)+" min":"—"}</b><span class="sub">en la freidora</span></div></div>
-    ${r.b?`<p class="sub" style="margin:0 0 10px">${esc(r.b)}${r.por?" · "+esc(r.por):""}</p>`:""}
-    ${r.m?`<button class="btn heat" style="width:100%" data-timer="${r.id}">Empezar temporizador · ${r.m} min</button>`:""}
-    <p class="sub" style="margin:8px 0 0">Precalentá 3 a 5 minutos antes de poner la comida.</p>
-    <h3 class="label" style="margin-top:20px">Ingredientes</h3>
-    <ul class="ing">${r.i.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    <h3 class="label">Preparación</h3>
-    <ol class="steps">${r.s.map(x=>`<li>${esc(x)}</li>`).join("")}${r.t&&r.m?`<li>Cociná a ${r.t} °C durante ${r.mr||r.m} minutos${r.flip?", dando vuelta o agitando a mitad de tiempo":""}.</li>`:""}</ol>
-    ${r.res?`<p class="sub"><b>Resultado:</b> ${esc(r.res)}</p>`:""}
-    ${r.tip?`<p class="tip">${esc(r.tip)}</p>`:""}
-  </div>`;
-  sh.hidden=false;sh.scrollTop=0;
-}
-
-/* ---------- TEMPORIZADOR ---------- */
-let T=null,wake=null,actx=null;
+/* ============ temporizador ============ */
+let T=null,actx=null;
 function beep(n=3){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);const t=actx.currentTime+i*.35;g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.start(t);o.stop(t+.3);}}catch(e){}try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}}
 function startTimer(id){
-  const r=BYID[id];const total=r.m*60;let left=total,half=false;
-  beep(1);
-  try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{})}catch(e){}
-  const el=$("#timer");el.hidden=false;
-  const C=2*Math.PI*45;
+  const r=BYID[id];const total=r.m*60;let left=total,half=false;const end=Date.now()+total*1000;beep(1);keepAwake(true);
+  const el=$("#timer");el.hidden=false;history.pushState({sheet:1,timer:1},"","#temporizador");const C=2*Math.PI*45;
   const draw=(msg="")=>{const mm=Math.floor(left/60),ss=String(left%60).padStart(2,"0");
-    el.innerHTML=`<span class="label">${esc(r.n)} · ${r.t} °C</span>
-    <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--line)" stroke-width="6"/>
-    <circle cx="50" cy="50" r="45" fill="none" stroke="var(--heat)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-left/total)}"/></svg>
-    <div class="num">${mm}:${ss}</div></div>
-    ${msg?`<div class="alert">${msg}</div>`:`<span class="sub">${r.flip?"Te aviso a la mitad para dar vuelta.":"Dejá la pantalla abierta."}</span>`}
+    el.innerHTML=`<p class="eyebrow">${esc(r.n)}${r.t?` · ${r.t} °C`:""}</p>
+    <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="50" cy="50" r="45" fill="none" stroke="var(--saffron)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-left/total)}"/></svg><div class="n num">${mm}:${ss}</div></div>
+    ${msg?`<div class="alert">${msg}</div>`:`<p class="lead" style="margin:0">${r.flip?"Te aviso a la mitad para dar vuelta.":"Dejá la pantalla abierta: suena al terminar."}</p>`}
     <button class="btn ghost" data-stop>${left?"Cancelar":"Listo"}</button>`;};
   draw();clearInterval(T);
-  T=setInterval(()=>{left--;
+  T=setInterval(()=>{left=Math.max(0,Math.round((end-Date.now())/1000));
     if(r.flip&&!half&&left<=Math.floor(total/2)){half=true;beep(2);}
-    if(left<=0){left=0;clearInterval(T);beep(4);draw("¡Listo! Sacalo de la freidora");return;}
-    draw(r.flip&&half&&left>total/2-20?"Dar vuelta o agitar la canasta":"");},1000);
+    if(left<=0){clearInterval(T);beep(4);draw("¡Listo! Sacalo de la freidora");return;}
+    draw(r.flip&&half&&left>total/2-20?"Dar vuelta o agitar la canasta":"");},500);
 }
-function stopTimer(){clearInterval(T);$("#timer").hidden=true;try{wake&&wake.release()}catch(e){}wake=null;}
+function stopTimer(){clearInterval(T);$("#timer").hidden=true;keepAwake(false);if(history.state&&history.state.timer){skipPop=true;history.back();}}
 
-/* ---------- RENDER ---------- */
-function vEmpty(){return `<div class="empty" style="text-align:left;border-style:solid">
-  <h2 style="margin-top:0">Bienvenido a Mi Freidora</h2>
-  <p>Para empezar, cargá tus libros de recetas en PDF. La app los lee completos y deja todas las recetas guardadas en este celular.</p>
-  <button class="btn" data-libros>Cargar mis libros</button></div>`;}
+/* ============ render y eventos ============ */
 function render(){
-  const v=(!R.length&&S.tab!=="favoritos")?vEmpty():{heladera:vHeladera,vianda:vVianda,recetas:vRecetas,favoritos:vFavs}[S.tab]();
-  $("#view").innerHTML=v;
-  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===S.tab?"page":"false"));
-  $("#count").textContent=R.length?`Mis libros · ${R.length}`:"Mis libros";
+  renderTabs();
+  $("#view").innerHTML=({inicio:vInicio,recetas:vRecetas,heladera:vHeladera,viandas:vViandas,favoritas:vFavoritas})[S.tab]();
 }
-function go(tab){S.tab=tab;if(location.hash!=="#"+tab)location.hash=tab;render();scrollTo(0,0);}
-window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(["heladera","vianda","recetas","favoritos"].includes(h)&&h!==S.tab){S.tab=h;render();}});
-
+function go(tab){S.tab=tab;S.limit=36;render();scrollTo({top:0});if(location.hash!=="#"+tab)history.replaceState(history.state,"","#"+tab);}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-fav],[data-open],[data-have],[data-clear],[data-newweek],[data-swap],[data-cat],[data-tab],[data-close],[data-timer],[data-stop],[data-libros],[data-delbook],[data-more]");
-  if(!t)return;
-  if(t.dataset.fav){e.stopPropagation();const id=t.dataset.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[...S.favs,id];store.set("favs",S.favs);
-    document.querySelectorAll(`[data-fav="${id}"]`).forEach(b=>{b.setAttribute("aria-pressed",isFav(id));b.textContent=isFav(id)?"♥":"♡"});if(S.tab==="favoritos")render();return;}
-  if(t.dataset.open){S.sheet="receta";openRecipe(t.dataset.open);return;}
-  if("libros" in t.dataset){openLibros();return;}
-  if(t.dataset.delbook){const id=t.dataset.delbook;IDB.del(id).catch(()=>{});delete IMPORTED[id];delete ST[id];const k=BOOKS.findIndex(b=>b.id===id);if(k>=0)BOOKS.splice(k,1);rebuild();render();renderLibros();return;}
-  if("more" in t.dataset){S.limit+=40;$("#rlist").innerHTML=listHTML();return;}
-  if(t.dataset.have){const k=t.dataset.have;S.have=S.have.includes(k)?S.have.filter(x=>x!==k):[...S.have,k];store.set("have",S.have);render();return;}
-  if("clear" in t.dataset){S.have=[];store.set("have",[]);render();return;}
-  if("newweek" in t.dataset){buildWeek();render();return;}
-  if(t.dataset.swap){const[d,s]=t.dataset.swap.split("|");swap(+d,s);render();return;}
-  if(t.dataset.cat){S.cat=t.dataset.cat;render();return;}
-  if(t.dataset.tab){go(t.dataset.tab);return;}
-  if("close" in t.dataset){S.sheet=null;$("#sheet").hidden=true;render();return;}
-  if(t.dataset.timer){startTimer(t.dataset.timer);return;}
-  if("stop" in t.dataset){stopTimer();return;}
+  const t=e.target.closest("[data-fav],[data-open],[data-tab],[data-cat],[data-flag],[data-have],[data-clear],[data-newweek],[data-swap],[data-close],[data-timer],[data-stop],[data-libros],[data-delbook],[data-more],[data-quick],.steps li");
+  if(!t)return;const d=t.dataset;
+  if(t.matches(".steps li")){t.classList.toggle("done");return;}
+  if(d.fav){e.stopPropagation();const id=d.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[...S.favs,id];store.set("favs",S.favs);
+    document.querySelectorAll(`[data-fav="${CSS.escape(id)}"]`).forEach(b=>{b.setAttribute("aria-pressed",isFav(id));b.setAttribute("aria-label",isFav(id)?"Quitar de favoritas":"Guardar en favoritas");});
+    toast(isFav(id)?"Guardada en favoritas":"Quitada de favoritas");if(S.tab==="favoritas"&&!S.sheet)render();return;}
+  if(d.open){openRecipe(d.open);return;}
+  if(d.tab){if(!$("#sheet").hidden)closeSheet();go(d.tab);return;}
+  if(d.cat!==undefined){S.cat=d.cat||null;S.limit=36;if(S.tab!=="recetas")go("recetas");else render();return;}
+  if(d.quick==="rapidas"){S.fq=true;S.cat=null;go("recetas");return;}
+  if(d.flag){S[d.flag]=!S[d.flag];S.limit=36;render();return;}
+  if(d.have){const k=d.have;S.have=S.have.includes(k)?S.have.filter(x=>x!==k):[...S.have,k];store.set("have",S.have);S.limit=36;const y=scrollY;render();scrollTo({top:y});return;}
+  if("clear" in d){S.have=[];store.set("have",[]);render();return;}
+  if("newweek" in d){buildWeek();render();toast("Semana nueva armada");return;}
+  if(d.swap){const[x,s]=d.swap.split("|");swap(+x,s);const y=scrollY;render();scrollTo({top:y});return;}
+  if("close" in d){closeSheet();return;}
+  if(d.timer){startTimer(d.timer);return;}
+  if("stop" in d){stopTimer();return;}
+  if("libros" in d){openLibros();return;}
+  if(d.delbook){const id=d.delbook;IDB.del(id).catch(()=>{});const b=BOOKS.find(x=>x.id===id);delete IMPORTED[id];delete ST[id];BOOKS=BOOKS.filter(x=>x.id!==id);if(b)NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==b.t);rebuild();renderLibros();return;}
+  if("more" in d){S.limit+=36;if(S.tab==="recetas")$("#rlist").innerHTML=listHTML();else{const y=scrollY;render();scrollTo({top:y});}return;}
 });
-document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches(".rc")){e.preventDefault();openRecipe(e.target.dataset.open);}});
-document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;S.limit=40;$("#rlist").innerHTML=listHTML();}});
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches(".card")){e.preventDefault();openRecipe(e.target.dataset.open);return;}
+  if(e.key==="Escape"){if(!$("#timer").hidden)stopTimer();else closeSheet();return;}
+  if(e.key==="Enter"&&e.target.id==="homeq"){S.q=e.target.value;S.cat=null;go("recetas");setTimeout(()=>{const i=$("#q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},0);}
+});
+let qT=null;
+document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;S.limit=36;clearTimeout(qT);qT=setTimeout(()=>{$("#rlist").innerHTML=listHTML();},120);}});
 document.addEventListener("change",async e=>{
-  if(e.target.id==="cat"||e.target.id==="book"){S[e.target.id]=e.target.value;S.limit=40;$("#rlist").innerHTML=listHTML();return;}
-  if(e.target.id==="pick"){const files=[...e.target.files];BUSY=true;for(const f of files){const id="local-"+norm(f.name).replace(/ /g,"-").slice(0,60);
-    if(!BOOKS.some(b=>b.id===id))BOOKS.push({id,t:f.name.replace(/\.pdf$/i,""),mb:+(f.size/1048576).toFixed(1)});
-    try{await importBytes(id,f.name.replace(/\.pdf$/i,""),new Uint8Array(await f.arrayBuffer()));}catch(err){ST[id]={state:"err",msg:"No se pudo leer este PDF."};renderLibros();}}BUSY=false;return;}if(e.target.dataset.shop!==undefined){const k=e.target.dataset.shop;if(e.target.checked)S.shop[k]=1;else delete S.shop[k];store.set("shop",S.shop);e.target.nextElementSibling.className=e.target.checked?"done":"";}});
-
-const h0=location.hash.slice(1);if(["heladera","vianda","recetas","favoritos"].includes(h0))S.tab=h0;
-rebuild();render();loadSaved();
+  const el=e.target;
+  if(el.dataset&&el.dataset.shop!==undefined){const k=el.dataset.shop;if(el.checked)S.shop[k]=1;else delete S.shop[k];store.set("shop",S.shop);el.nextElementSibling.className=el.checked?"done":"";return;}
+  if(el.id==="pick"){const files=[...el.files];el.value="";
+    for(const f of files){const id="local-"+slug(f.name).slice(0,60);const title=f.name.replace(/\.pdf$/i,"");const mb=+(f.size/1048576).toFixed(1);
+      if(!BOOKS.some(b=>b.id===id))BOOKS.push({id,t:title,mb});
+      try{await importBytes(id,title,new Uint8Array(await f.arrayBuffer()),mb);}catch(err){BUSY=false;ST[id]={state:"err",msg:"No se pudo leer este PDF."};renderLibros();}}
+  }
+});
+const h0=location.hash.slice(1);if(TABS.some(t=>t[0]===h0))S.tab=h0;else if(h0)history.replaceState(null,"","#"+S.tab);
+render();loadSaved();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
-
 </body>
 </html>
