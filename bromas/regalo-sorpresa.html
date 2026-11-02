@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#241142">
+<title>¡Te llegó una sorpresa! 🎁</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;background:radial-gradient(circle at 50% 15%,#7745aa,#281640 65%,#150b25);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:white;text-align:center;overflow:hidden}
+main{position:relative;z-index:2;width:min(94vw,430px);padding:25px 22px 36px;border-radius:27px;background:#ffffff12;box-shadow:0 20px 70px #0b031d88;border:1px solid #ffffff2b;backdrop-filter:blur(12px)}
+h1{font-size:clamp(25px,7vw,34px);line-height:1.16;margin:16px 0 10px}p{color:#eee0ff;font-size:16px;line-height:1.5}.emoji{font-size:112px;filter:drop-shadow(0 12px 18px #11052088);display:block;animation:float 2.5s ease-in-out infinite;line-height:1.2}.button{cursor:pointer;display:block;margin:26px auto 10px;padding:17px 26px;width:100%;background:linear-gradient(120deg,#ffd471,#ffa3ca);color:#381236;border:0;border-radius:999px;font-size:20px;font-weight:850;box-shadow:0 7px 0 #7e4779;touch-action:manipulation}.button:active{transform:translateY(4px);box-shadow:0 3px 0 #7e4779}.button:disabled{opacity:.8;cursor:default}.hint{font-size:13px;color:#d9c8ec}.boom{font-size:clamp(46px,15vw,73px);font-weight:1000;letter-spacing:-3px;color:#efff93;text-shadow:4px 5px 0 #692975,0 0 25px #a7ff55;animation:shake .13s infinite}.cloud{font-size:110px;animation:poof 1.2s infinite alternate;filter:drop-shadow(0 0 18px #9af252)}.hide{display:none!important}.spark{position:fixed;top:-15vh;opacity:0;pointer-events:none;animation:fall 2.1s ease-in forwards;font-size:25px;z-index:1}@keyframes float{50%{transform:translateY(-10px) rotate(-5deg)}}@keyframes shake{50%{transform:translate(4px,-3px) rotate(-3deg)}}@keyframes poof{to{transform:scale(1.18) rotate(8deg)}}@keyframes fall{10%{opacity:1}100%{top:110vh;transform:rotate(500deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.emoji,.boom,.cloud{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <section id="first">
+    <span class="emoji">🎁</span>
+    <h1>¡Alguien te mandó un regalo!</h1>
+    <p>Hay una sorpresa muy especial para vos. 💜</p>
+    <button class="button" id="open">✨ Abrir mi sorpresa ✨</button>
+    <div class="hint">Activá el sonido para disfrutarla 🔊</div>
+  </section>
+  <section id="last" class="hide" aria-live="polite">
+    <div class="cloud">💨</div>
+    <div class="boom">¡PRRRRR!</div>
+    <h1>¡Te comiste la broma! 🤣</h1>
+    <p>Este regalo venía con efectos especiales.</p>
+    <button class="button" id="again">🔊 ¡Otra vez!</button>
+  </section>
+</main>
+<script>
+(function(){
+const first=document.getElementById('first'),last=document.getElementById('last'),open=document.getElementById('open'),again=document.getElementById('again');
+let ctx;
+function sound(){
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(!C) return;
+  ctx=ctx||new C();
+  if(ctx.state==='suspended') ctx.resume();
+  const sr=ctx.sampleRate,d=1.65,buffer=ctx.createBuffer(1,Math.ceil(sr*d),sr),a=buffer.getChannelData(0);
+  let low=0,phase=0;
+  for(let i=0;i<a.length;i++){
+    const t=i/sr;
+    const pulse=Math.pow(Math.max(0,Math.sin(2*Math.PI*(7.5*t+1.7*t*t))),1.25);
+    const tail=Math.min(1,t*35)*Math.pow(Math.max(0,1-t/d),.75);
+    const freq=70-28*(t/d)+10*Math.sin(t*13);
+    phase+=2*Math.PI*freq/sr;
+    low=low*.86+(Math.random()*2-1)*.14;
+    const growl=Math.sin(phase+0.6*Math.sin(phase*.18))*0.52;
+    a[i]=(growl*(.35+.65*pulse)+low*.85)*tail*.78;
+  }
+  const src=ctx.createBufferSource(),f=ctx.createBiquadFilter(),gain=ctx.createGain();
+  f.type='lowpass';f.frequency.setValueAtTime(600,ctx.currentTime);
+  f.frequency.exponentialRampToValueAtTime(230,ctx.currentTime+d);
+  gain.gain.value=.78;
+  src.buffer=buffer;src.connect(f);f.connect(gain);gain.connect(ctx.destination);src.start();
+ }catch(e){ /* Some browser audio settings may prevent playback. */ }
+}
+function confetti(){
+ const choices=['💨','✨','😂','💚','🎉'];
+ for(let i=0;i<26;i++){
+  const s=document.createElement('span');s.className='spark';s.textContent=choices[i%choices.length];
+  s.style.left=(Math.random()*100)+'vw';s.style.animationDelay=(Math.random()*.5)+'s';
+  s.style.animationDuration=(1.6+Math.random()*1.6)+'s';document.body.appendChild(s);
+  setTimeout(()=>s.remove(),3800);
+ }
+}
+function reveal(){first.classList.add('hide');last.classList.remove('hide');sound();confetti();}
+open.addEventListener('click',reveal);
+again.addEventListener('click',()=>{sound();confetti();});
+})();
+</script>
+</body>
+</html>
