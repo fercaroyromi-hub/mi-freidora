@@ -262,7 +262,7 @@ if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudfl
    2) junta todos los títulos candidatos
    3) asigna cada título a la receta cuyos ingredientes y pasos coinciden con él
       (y si no hay coincidencia clara, por número y posición) */
-const PARSER_VERSION=4;
+const PARSER_VERSION=5;
 const NORM=x=>String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const H_ING=/^(ingredientes|lo que necesit[aá]s|vas a necesitar|necesit[aá]s)\b/i,
  H_PREP=/^(preparaci[oó]n|elaboraci[oó]n|paso a paso|pasos|procedimiento|instrucciones|modo de preparaci[oó]n|c[oó]mo se hace)\b/i,
@@ -273,11 +273,12 @@ const H_ING=/^(ingredientes|lo que necesit[aá]s|vas a necesitar|necesit[aá]s)\
  H_POR=/^[^\p{L}\p{N}]{0,3}(porci[oó]n(es)?|rinde|raciones)\s*[:.]\s*/iu,
  H_NUTRI=/^[^\p{L}\p{N}]{0,3}(nutrici[oó]n|valores nutricionales|informaci[oó]n nutricional|valor nutricional|tabla nutricional)\b\s*(\(.*?\))?\s*[:.]?\s*/iu,
  H_DESC=/^descripci[oó]n\b/i,
+ META2=/^[^\p{L}]{0,3}(calor[ií]as|prote[ií]nas|grasas|hidratos|carbohidratos|az[uú]cares|fibra|sodio|tiempo|dificultad|porci[oó]n|raci[oó]n|rinde|personas|nivel|kcal|valor(es)? nutricional)(?=.*[:\d])|^[^:]{2,30}:\s*\d+[^a-z]{0,12}$/iu,
  META=/(\b\d+\s*(porci[oó]n|porciones|raciones|unidades|personas|min|minutos)\b|^tiempo\b|^dificultad\b)/i,
  CHAP=/cap[ií]tulo\s*\d+\s*[–\-—:.]\s*(.{3,70})$/iu,
- TNUM=/^[^\p{L}\p{N}]{0,8}(\d{1,4})\s*[\.\)\-–]\s*(\p{L}.{2,110})$/u,
+ TNUM=/^[^\p{L}\p{N}]{0,8}(\d{1,4})\s*[\.\)\-–]\s*([\p{L}"“¿¡«(].{2,110})$/u,
  BUL=/^[\s●•▪○◦\-–*·✓✔➤►]+/,
- JUNK=/^(\|.*\||-{3,}|\[?\s*page\s*\d+.*|p[aá]gina\s*\d+|\d{1,4}|.*\b[a-z0-9-]+\.(com|net|org|uy|ar)\b.*)$/i;
+ JUNK=/^(©.*|\|.*\||-{3,}|\[?\s*page\s*\d+.*|p[aá]gina\s*\d+|\d{1,4}|.*\b[a-z0-9-]+\.(com|net|org|uy|ar)\b.*)$/i;
 const STOP=new Set("con de del la las el los en al a y o para sin por su sus un una unos unas tipo estilo receta recetas casera casero caseras caseros light fit saludable saludables crocante crocantes crujiente crujientes dorado dorados doradas airfryer freidora aire express exprés rapido rapida rapidos rapidas facil faciles versión version mini relleno rellena rellenos rellenas horno sin culpa clasico clasica perfecto perfecta super ultra integral integrales natural naturales plancha asado asada asados asadas al estilo grill gratinado gratinada gratinados gratinadas".split(" "));
 const SYN={aguacate:"palta",platano:"banana",calabacin:"zapallito",zucchini:"zapallito",zumo:"jugo",gamba:"langostino",patata:"papa",champinon:"hongo",champinone:"hongo",judia:"chaucha",pechuga:"pollo",suprema:"pollo",muslo:"pollo",claras:"huevo",clara:"huevo",yema:"huevo",omelette:"huevo",huevos:"huevo",carne:"carne",ternera:"carne",res:"carne",frutilla:"fresa",fresas:"fresa",oat:"avena",couscou:"cuscus",couscous:"cuscus",cuscu:"cuscus",palito:"baston",bastone:"baston",baston:"baston",alubia:"poroto",frijol:"poroto",judia:"chaucha",ejote:"chaucha",chauchas:"chaucha",pavo:"pavo",bizcochito:"bizcocho",magdalena:"muffin",cupcake:"muffin",panecillo:"pan",bollito:"pan",tostada:"pan",rebanada:"pan",sandwich:"pan",bocadillo:"pan"};
 function tokens(x){
@@ -294,20 +295,30 @@ function niceTitle(x){
   if(isUpper(x))x=x.toLowerCase();return cap(x);
 }
 function cleanLines(raw){const lines=[],page=[];let pg=0;
-  for(const r of raw){const l=String(r).replace(/\s+/g," ").trim();const m=l.match(/^§PAGE (\d+)$/);if(m){pg=+m[1];continue;}if(!l||JUNK.test(l))continue;lines.push(l);page.push(pg);}
+  for(const r of raw){let l=String(r).replace(/\s+/g," ").trim();
+    // restos de fotos leídas como letras sueltas antes de un encabezado o de una cantidad
+    l=l.replace(/^(?:\S{1,4}\s+){1,8}?(?=(INGREDIENTES|INSTRUCCIONES|PREPARACI[OÓ]N|ELABORACI[OÓ]N)\b)/u,m=>/[a-záéíóúñ]{5,}/i.test(m)?m:"");
+    {const mm=l.match(/^((?:\S{1,3}\s+){2,10})(?=(?:\d+(?:[\/.,]\d+)?|½|¼|¾|⅓)\s*(?:\d\/\d\s*)?(?:tazas?|cucharad\w*|cdas?|cditas?|g|gr|kg|ml|l|unidad\w*|dientes?|huevos?|plátanos?|bolas?|pizcas?|rodajas?|latas?|filetes?|pechugas?)\b)/iu);
+      if(mm&&(mm[1].match(/[^\p{L}\s]|\b\p{Lu}{1,2}\b|\b\p{L}\b/gu)||[]).length>=2)l=l.slice(mm[1].length);}const m=l.match(/^§PAGE (\d+)$/);if(m){pg=+m[1];continue;}if(!l||JUNK.test(l))continue;lines.push(l);page.push(pg);}
   return {lines,page};}
 
 /* une líneas cortadas: solo si la siguiente empieza en minúscula y la anterior no terminó */
-function collect(lines,a,b,skip){
-  const out=[];
+function collect(lines,a,b,skip,mode){
+  const out=[];let fresh=false;
   for(let k=a;k<b;k++){if(skip&&skip.has(k))continue;let x=lines[k];
     const bullet=BUL.test(x)||/^\d{1,2}\s*[\.\)]\s*\S/.test(x);
     x=x.replace(BUL,"").replace(/^\d{1,2}\s*[\.\)]\s*/,"").trim();if(!x)continue;
     const prev=out[out.length-1];
-    const dangling=prev&&/\b(de|del|con|y|e|en|para|a|al|o|u|la|el|los|las|sin|sobre|por|tipo|bien|muy|mas|más)$/i.test(prev);
-    const shortTail=prev&&!bullet&&!/^[\d½¼¾⅓⅔]/.test(x)&&x.split(" ").length<=2&&/^[\d½¼¾⅓⅔]/.test(prev)&&!/[:.!?)]$/.test(prev)&&!/^(sal|pimienta|aceite|or[eé]gano|agua|perejil|ajo|lim[oó]n|canela|comino|piment[oó]n|nuez moscada|stevia|miel)\b/i.test(x);
+    const dangling=prev&&/(?:^|[^\p{L}])(de|del|con|y|e|en|para|a|al|o|u|la|el|los|las|sin|sobre|por|tipo|bien|muy|mas|más)$/iu.test(prev);
+    const shortTail=prev&&!bullet&&(mode==="capsIng"||!/^\p{Lu}\p{Ll}/u.test(x))&&!/^[\d½¼¾⅓⅔]/.test(x)&&x.split(" ").length<=2&&/^[\d½¼¾⅓⅔]/.test(prev)&&!/[:.!?)]$/.test(prev)&&!/^(sal|pimienta|aceite|or[eé]gano|agua|perejil|ajo|lim[oó]n|canela|comino|piment[oó]n|nuez moscada|stevia|miel)\b/i.test(x);
+    const open=prev&&(prev.split("(").length>prev.split(")").length||/,$/.test(prev));
+    const capsStep=mode==="capsSteps"&&prev&&!bullet;
+    if(capsStep){const head=fresh&&prev.split(" ").length<=4&&!/[.:,]$/.test(prev);out[out.length-1]=prev+(head?": ":" ")+x;fresh=false;continue;}
+    if(open&&!bullet&&!/^[\d½¼¾⅓⅔]/.test(x)){out[out.length-1]=prev+" "+x;fresh=false;continue;}
     if(prev&&!bullet&&(dangling||shortTail||/^[\p{Ll}(]/u.test(x)&&!/[:.!?)]$/.test(prev)&&prev.length>18))out[out.length-1]=prev+" "+x;
-    else out.push(x);
+    else if(mode==="capsIng"&&!/\d/.test(x)&&x.split(" ").length<=2&&/^[\d½¼¾⅓⅔]/.test(lines[k+1]||"")&&!/^(sal|pimienta|aceite|or[eé]gano|agua|perejil|ajo|canela|comino)\b/i.test(x))out.push(x+":");
+    else{out.push(x);fresh=true;continue;}
+    fresh=false;
   }
   return out;
 }
@@ -317,8 +328,16 @@ function parseBook(rawLines,book,fileId){
   const {lines,page}=cleanLines(rawLines);const paged=page.length&&page[page.length-1]>0;
   const N=lines.length;
   const allCaps=lines.filter(l=>isUpper(l)).length/Math.max(1,lines.length)>0.45;
-  const isStruct=l=>H_ING.test(l)||H_PREP.test(l)||H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||H_COC.test(l);
-  const ingIdx=[];lines.forEach((l,k)=>{if(H_ING.test(l))ingIdx.push(k);});
+  const isStruct=l=>(H_ING.test(l)&&ingTxt.has(l))||H_PREP.test(l)||H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||H_COC.test(l);
+  const DANG=/(?:^|[^\p{L}])(de|del|los|las|el|la|todos|todas|y|e|con|en|a|al|sus|demás|resto|unir|mezcl\p{L}*|integr\p{L}*|incorpor\p{L}*|agreg\p{L}*|añad\p{L}*)\s*$/iu;
+  const ingIdx=[];lines.forEach((l,k)=>{if(!H_ING.test(l))return;
+    const rest=l.replace(H_ING,"").trim();
+    if(!allCaps&&/^INGREDIENTES/.test(l)){ingIdx.push(k);return;}
+    if(/^(hasta|y|e|que|en|con|bien|restantes|al|a|del|de|los|las|secos y|húmedos y|hasta que|se|sin)\b/i.test(rest)&&!/^de\s+(la|el)\s+\p{L}+\s*:?$/iu.test(rest))return;
+    if(k>0&&DANG.test(lines[k-1])&&rest.length>0)return;
+    if(k>0&&DANG.test(lines[k-1])&&!rest&&/\b(todos los|los|demás|resto de los|resto de)\s*$/i.test(lines[k-1]))return;
+    ingIdx.push(k);});
+  const ingTxt=new Set(ingIdx.map(k=>lines[k]));
   if(!ingIdx.length)return [];
 
   /* --- 1. candidatos a título --- */
@@ -329,22 +348,43 @@ function parseBook(rawLines,book,fileId){
     if(p>=0){let e=p+1,lastStep=0;
       const META_LINE=/^\s*\d+\s*(porci[oó]n(es)?|raciones|personas|unidades)\b|^(tiempo|porciones|rinde|raciones)\s*:/i;
       while(e<nx){const l=lines[e];const sm=l.match(/^\s*(\d{1,2})\s*[.)]/);
-        if(H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||META_LINE.test(l))break;
+        if(H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||META_LINE.test(l)||META2.test(l))break;
         if(sm){const n=+sm[1];if(n===lastStep+1||n===1&&lastStep===0){lastStep=n;e++;continue;}
           if(TNUM.test(l)&&!/[.;,:]$/.test(l)&&!/\d\s*(min|°)/i.test(l))break;}
         e++;}
-      if(e<nx&&META_LINE.test(lines[e])){let q=e;while(q-1>p&&isUpper(lines[q-1])&&e-q<2)q--;e=q;}
+      if(e<nx&&(META_LINE.test(lines[e])||META2.test(lines[e]))){let q=e;while(q-1>p&&isUpper(lines[q-1])&&e-q<2)q--;e=q;}
       stepZones.push([p,e]);}});
   const inSteps=k=>stepZones.some(([a,b])=>k>a&&k<b);
   lines.forEach((l,k)=>{const m=l.match(TNUM);
     if(m&&!/[.;,:]$/.test(l)&&!isStruct(l)&&l.length<=110&&!inSteps(k)&&!/\d\s*(min|°|g\b|ml\b|kcal)/i.test(l))titleAt.set(k,{idx:k,num:+m[1],text:l});});
   // libros sin números: línea(s) arriba de "Ingredientes" (saltando porciones/tiempos), o la de arriba de "Descripción"
-  ingIdx.forEach((ii,j)=>{const lo=j?ingIdx[j-1]+1:0;let k=ii-1;
-    while(k>=lo&&(META.test(lines[k])||H_POR.test(lines[k])||H_NUTRI.test(lines[k])||/^\p{Ll}/u.test(lines[k])&&k>lo&&lines[k].length>0&&!isUpper(lines[k])&&false))k--;
+  // "Preparación:" justo antes de "Ingredientes" (libros a dos columnas)
+  const prepBefore=(ii,lo)=>{for(let k=ii-1;k>=Math.max(lo,ii-4);k--){if(H_PREP.test(lines[k]))return (k-1>=lo&&/[.!]$/.test(lines[k-1])&&lines[k-1].length>40&&!/^[•·\-*\d]/.test(lines[k-1]))?k:-1;if(/[.]$/.test(lines[k])&&!/^[•·\-*]/.test(lines[k])&&k<ii-1&&lines[k].length>60)break;}return -1;};
+  // libros a dos columnas cuyo texto viene mezclado: ingredientes sin viñeta y pasos con "•"
+  const BUL1=/^[•·▪●]\s*\S/;
+  const bulletBook=paged&&!allCaps&&ingIdx.length>=6&&ingIdx.filter((ii,j)=>{const e=j+1<ingIdx.length?ingIdx[j+1]:N;let b=0,q=0;for(let k=ii+1;k<e;k++){if(BUL1.test(lines[k]))b++;else if(/^[\d½¼¾⅓⅔]/.test(lines[k]))q++;}return b>=2&&q>=2;}).length>=ingIdx.length*0.5;
+  const region=new Map();
+  if(bulletBook){
+    const isT=u=>u&&!/[.,;:!]$/.test(u)&&u.length<70&&u.length>3&&/^[\p{Lu}¡¿"“]/u.test(u)&&!isStruct(u)&&!META.test(u)&&!META2.test(u)&&!/^[\d½¼¾⅓⅔•]/.test(u)&&!/^(el|la|los|las|una?|sal|aceite|agua|pimienta)\b/i.test(u)&&!/(?:^|[^\p{L}])(de|con|y|al)$/iu.test(u);
+    ingIdx.forEach((ii,j)=>{const lo=j?ingIdx[j-1]+1:0;
+      // inicio de la receta: primera línea de su página (o de la anterior si la receta empieza ahí)
+      for(let k=ii-1;k>=Math.max(lo,ii-25);k--){if(page[k]!==page[k+1]||k===lo){const st=page[k]!==page[k+1]?k+1:k;if(isT(lines[st])&&/[.!]$|^.{55,}$/.test(lines[st+1]||"")){region.set(ii,st);titleAt.set(st,{idx:st,end:st,num:null,text:lines[st],fallback:true});}break;}}
+    });}
+  ingIdx.forEach((ii,j)=>{const lo=j?ingIdx[j-1]+1:0;let k=ii-1;if(region.has(ii))return;
+    {const pb=prepBefore(ii,lo);if(pb>=0)k=pb-1;}
+    while(k>=lo&&(META.test(lines[k])||META2.test(lines[k])||H_POR.test(lines[k])||H_NUTRI.test(lines[k])))k--;
+    // salta 1-2 renglones de descripción (terminan en punto) si arriba hay un título corto
+    if(k-1>=lo&&/[.!]$/.test(lines[k])&&!inSteps(k)&&!/^\s*\d{1,2}\s*[.)]/.test(lines[k])&&!/^[•·]/.test(lines[k])){
+      for(let q=k-1,t=0;q>=lo&&t<8;q--,t++){const u=lines[q],nx=lines[q+1];
+        const isTitle=!/[.,;:!]$/.test(u)&&u.length<70&&/^[\p{Lu}¡¿"“]/u.test(u)&&!isStruct(u)&&!META.test(u)&&!META2.test(u)&&!titleAt.has(q)&&!/^\p{Ll}/u.test(nx)&&(u.length<45||/[.!]$/.test(lines[k]));
+        const para=/[.!]$/.test(u)||u.length>=60||/^\p{Ll}/u.test(nx);
+        if(isTitle&&(u.length<50||!para)){k=q;break;}
+        if(!para||inSteps(q)||/^[•·]/.test(u))break;}}
     // salta descripción
     for(let d=ii-1;d>=Math.max(lo,ii-14);d--){if(H_DESC.test(lines[d])){k=d-1;break;}}
-    if(k>=lo&&!titleAt.has(k)&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!isStruct(lines[k])&&(!inSteps(k)||(k===ii-1||META.test(lines[k+1]||""))&&!/^\s*\d{1,2}\s*[.)]/.test(lines[k])&&lines[k].length<70)){
-      let s=k;while(!allCaps&&s-1>=lo&&isUpper(lines[s])&&isUpper(lines[s-1])&&lines[s-1].length<45&&!META.test(lines[s-1])&&k-s<2)s--;
+    if(k>=lo&&!titleAt.has(k)&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!isStruct(lines[k])&&(!inSteps(k)||(k===ii-1||META.test(lines[k+1]||"")||META2.test(lines[k+1]||""))&&!/^\s*\d{1,2}\s*[.)]/.test(lines[k])&&lines[k].length<70)){
+      let s=k;while(allCaps&&s-1>=lo&&k-s<2&&(/(?:^|[^\p{L}])(de|del|con|y|e|en|al|a|sin|para)$/iu.test(lines[s-1])||/^(de|del|con|y|e|en|al|a la|sin|para|rellen\w*|estilo)\b/i.test(lines[s])&&isUpper(lines[s-1])&&!JUNK.test(lines[s-1]))&&lines[s-1].length<50&&!/[.:]$/.test(lines[s-1]))s--;
+      while(!allCaps&&s-1>=lo&&isUpper(lines[s])&&isUpper(lines[s-1])&&lines[s-1].length<45&&!META.test(lines[s-1])&&k-s<2)s--;
       const text=lines.slice(s,k+1).join(" ");
       titleAt.set(s,{idx:s,end:k,num:null,text,fallback:true});
     }});
@@ -355,26 +395,51 @@ function parseBook(rawLines,book,fileId){
   const bodies=ingIdx.map((ii,j)=>{
     const prevII=j?ingIdx[j-1]:-1,nextII=j+1<ingIdx.length?ingIdx[j+1]:N;
     // metadatos justo antes de "Ingredientes" (porción / nutrición)
-    let por=(lines[ii].match(/\((?:para\s+)?([^)]{3,40})\)/i)||[])[1]||"",nut="",preStart=ii;
+    let por=(lines[ii].match(/\((?:para\s+)?([^)]{3,40})\)/i)||[])[1]||(lines[ii].match(/para\s+(\d+\s*(personas|porciones|raciones|unidades))/i)||[])[1]||"",nut="",preStart=ii;
     for(let k=ii-1;k>prevII&&k>=ii-6;k--){if(H_POR.test(lines[k])){por=lines[k].replace(H_POR,"").trim();preStart=k;}else if(H_NUTRI.test(lines[k])){nut=lines[k].replace(H_NUTRI,"").trim();preStart=k;}else if(META.test(lines[k])&&!titleIdxSet.has(k)){if(!por){const m=lines[k].match(/\d+\s*(porci[oó]n(es)?|raciones|unidades|personas)/i);if(m)por=m[0];}}else break;}
     // fin: antes de los metadatos/título del siguiente cuerpo
     let end=nextII;
-    if(nextII<N){for(let k=nextII-1;k>ii&&k>=nextII-6;k--){if(H_POR.test(lines[k])||H_NUTRI.test(lines[k])||META.test(lines[k]))end=k;else break;}}
+    if(nextII<N){for(let k=nextII-1;k>ii&&k>=nextII-8;k--){if(H_POR.test(lines[k])||H_NUTRI.test(lines[k])||META.test(lines[k])||META2.test(lines[k]))end=k;else break;}}
     let prep=-1,coc=-1,res=-1,tip=-1,warn=-1,nutIn=-1;
     for(let k=ii+1;k<end;k++){const l=lines[k];
       if(prep<0&&H_PREP.test(l))prep=k;else if(coc<0&&H_COC.test(l))coc=k;else if(res<0&&H_RES.test(l))res=k;
       else if(tip<0&&H_TIP.test(l))tip=k;else if(warn<0&&H_WARN.test(l))warn=k;else if(nutIn<0&&H_NUTRI.test(l))nutIn=k;}
     const marks=[prep,coc,res,tip,warn,nutIn].filter(x=>x>ii);
     const nextMark=k0=>Math.min(end,...marks.filter(x=>x>k0));
-    const ingEnd=nextMark(ii);
-    const i=collect(lines,ii+1,ingEnd,titleIdxSet).filter(x=>!META.test(x)||x.length>40);
-    const s=prep>=0?collect(lines,prep+1,nextMark(prep),titleIdxSet):[];
+    let ingEnd=nextMark(ii);
+    // porciones sueltas al principio ("4-6 PERSONAS")
+    const skipI=new Set(titleIdxSet);
+    for(let k=ii+1;k<Math.min(ingEnd,ii+3);k++){const m=lines[k].match(/^(\d+\s*(?:-|a)\s*\d+|\d+)\s*(personas|raciones|porciones|unidades)$/i);if(m){if(!por)por=lines[k].toLowerCase();skipI.add(k);}}
+    // pasos con viñeta después de ingredientes sin viñeta (sin título "Preparación")
+    let bulSteps=-1;
+    if(prep<0){const firsts=[];for(let k=ii+1;k<ingEnd&&firsts.length<3;k++)if(!skipI.has(k))firsts.push(lines[k]);
+      if(firsts.length>=2&&firsts.every(x=>!/^[•·▪●*\-–]\s*/.test(x))){for(let k=ii+3;k<ingEnd;k++)if(/^[•·▪●]\s*\p{L}/u.test(lines[k])&&lines[k].length>25){bulSteps=k;break;}}}
+    const pb=prepBefore(ii,prevII+1);
+    const preSteps=pb>=0?collect(lines,pb+1,ii,titleIdxSet,""):[];
+    for(let k=ii+1;k<ingEnd;k++){if(META2.test(lines[k])||/^\s*\d+\s*(porci[oó]n(es)?|raciones|personas)\b/i.test(lines[k])){
+      if(!por){const m=lines[k].match(/\d+\s*(porci[oó]n(es)?|raciones|personas)/i);if(m)por=m[0];}
+      if(!nut){const nl=lines.slice(k,Math.min(ingEnd,k+7)).join(" ");const m=nl.match(/(\d+\s*kcal)/i);if(m)nut=nl.replace(/^.*?(calor)/i,"$1").slice(0,140);}
+      ingEnd=k;break;}}
+    const i=collect(lines,ii+1,bulSteps>0?bulSteps:ingEnd,skipI,allCaps?"capsIng":"").filter(x=>!META.test(x)||x.length>40);
+    const s=[...preSteps,...(prep>=0?collect(lines,prep+1,nextMark(prep),titleIdxSet,allCaps?"capsSteps":""):bulSteps>0?collect(lines,bulSteps,ingEnd,titleIdxSet,""):[])];
     // en algunos libros "Cocción" trae temperatura y tiempo
     const cocTxt=coc>=0?textBlock(lines,coc,nextMark(coc),/^/):"";
     const grab=(k,head)=>{if(k<0)return "";const e=nextMark(k);const parts=[];for(let q=k;q<e;q++){if(titleIdxSet.has(q))break;parts.push(lines[q]);}return parts.join(" ").replace(head,"").replace(/\s+/g," ").trim();};
     const tipT=grab(tip,H_TIP),warnT=grab(warn,H_WARN),resT=grab(res,/^resultado\s*:?\s*/i);
     if(!nut&&nutIn>=0)nut=grab(nutIn,H_NUTRI).slice(0,160);
     const body=[...i,...s,tipT].join(" ");
+    if(region.has(ii)){const rs=region.get(ii);let nrs=j+1<ingIdx.length&&region.has(ingIdx[j+1])?region.get(ingIdx[j+1]):end;
+      {let k=ii;while(k<nrs&&page[k]<=page[ii]+1)k++;nrs=k;}
+      let q=rs+1;while(q<ii&&!BUL1.test(lines[q])&&!/^[\d½¼¾⅓⅔]/.test(lines[q])&&!isStruct(lines[q])&&(/[.!]$/.test(lines[q])||lines[q].length>=55||/^\p{Ll}/u.test(lines[q+1]||"")))q++;
+      const I=[],S=[];let inStep=false;
+      for(let k=q;k<nrs;k++){const l=lines[k];if(skipI.has(k)&&k>ii)continue;if(isStruct(l)||titleIdxSet.has(k)&&k!==rs)continue;
+        if(/^(\d+\s*(?:-|a)\s*\d+|\d+)\s*(personas|raciones|porciones|unidades)$/i.test(l)){if(!por)por=l.toLowerCase();continue;}
+        if(BUL1.test(l)){S.push(l.replace(/^[•·▪●]\s*/,""));inStep=!/[.!]$/.test(l);continue;}
+        if(inStep||(S.length&&/^\p{Ll}/u.test(l))){if(S.length){S[S.length-1]+=" "+l;}inStep=!/[.!]$/.test(l);continue;}
+        const okW=(l.match(/\p{L}{4,}/gu)||[]).length;
+        if(!/^[\d½¼¾⅓⅔]/.test(l)&&(okW<1||okW<2&&l.length<14&&!/^(sal|agua|hielo|miel|canela)\b/i.test(l)))continue;
+        if(l.length<=90&&!/[.]$/.test(l)||/^[\d½¼¾⅓⅔]/.test(l))I.push(l);else if(S.length){S[S.length-1]+=" "+l;}}
+      if(I.length>=2){i.length=0;i.push(...I);s.length=0;s.push(...S);end=nrs;}}
     return {ii,prevII,nextII,preStart,end,i,s,cocTxt,tip:tipT,warn:warnT,res:resT,por,nut,tok:new Set(tokens(body)),
       ingTok:new Set(tokens(i.join(" "))),segTxt:[...i,...s,cocTxt].join(" ")};
   });
@@ -391,9 +456,13 @@ function parseBook(rawLines,book,fileId){
     for(const t of tt){const w=W(t);tot+=w;if(hasTok(bodies[bi].tok,t)){got+=w;hit++;}}return {s:got/tot,hit,n:tt.length,wt:tot};};
   const bTitle=new Array(NB).fill(-1),usedT=new Set();
   const MAXD=90;
+  // título más cercano arriba de cada receta (después del final de la receta anterior)
+  const nearestBefore=bodies.map((b,bi)=>{let best=-1;const lo=b.prevII;titles.forEach((t,ti)=>{if(t.idx<b.ii&&t.idx>=lo&&(best<0||t.idx>titles[best].idx))best=ti;});return best;});
   const weight=(bi,ti,samePage)=>{const t=titles[ti],b=bodies[bi];if(b.dup)return 0;const d=t.idx-b.ii;if(Math.abs(d)>MAXD)return 0;const c=cScore(ti,bi);
-    let w=1.4*c.s+(samePage?0.3:0)+(d<0&&t.idx>=(bi?bodies[bi-1].end-1:0)?0.08:0)+0.05*Math.exp(-Math.abs(d)/15);
-    if(c.n>=2&&c.hit===0)w-=0.6;return w>0.15?w:0;};
+    const before=d<0&&t.idx>b.prevII;
+    const nearest=before&&nearestBefore[bi]===ti;
+    let w=1.4*c.s+(samePage?0.3:0)+(nearest&&tidy?0.3:before?0.08:0)+0.05*Math.exp(-Math.abs(d)/15);
+    if(c.n>=2&&c.hit===0&&!(tidy&&nearest))w-=0.6;return w>0.15?w:0;};
   // mejor combinación exacta entre un grupo chico de recetas y títulos
   function bestMatch(bs,ts,samePageFn){
     if(!bs.length||!ts.length)return;
@@ -408,12 +477,25 @@ function parseBook(rawLines,book,fileId){
       memo.set(key,best);return best;};
     const [,pick]=go(0,0);pick.forEach((j,i)=>{if(j>=0){bTitle[bs[i]]=ts[j];usedT.add(ts[j]);}});
   }
+  // títulos "normales": uno solo justo arriba de la receta (no amontonado con otros) → se fija directo
+  const tIdxSet=new Set(titles.map(t=>t.idx));
+  const isClump=t=>tIdxSet.has(t.idx-1)||tIdxSet.has((t.end||t.idx)+1);
+  const withT=nearestBefore.filter(ti=>ti>=0);const clumpRatio=withT.length?withT.filter(ti=>isClump(titles[ti])).length/withT.length:0;
+  const tidy=clumpRatio<0.15&&withT.length>=NB*0.7;
+  if(tidy)bodies.forEach((b,bi)=>{const ti=nearestBefore[bi];if(ti<0||b.dup)return;const t=titles[ti];
+    const clumped=tIdxSet.has(t.idx-1)||tIdxSet.has((t.end||t.idx)+1);if(clumped||b.ii-t.idx>14)return;
+    const c=cScore(ti,bi);const known=tTok[ti].filter(x=>df.has(x)).length;
+    const descr=lines.slice(t.idx+1,b.ii).some(l=>H_DESC.test(l));
+    if(!descr&&known>=2&&c.hit===0)return;
+    const pg=paged?page[t.idx]:null;let better=false;
+    if(!descr)titles.forEach((o,oi)=>{if(oi===ti||(paged&&Math.abs(page[o.idx]-pg)>1)||Math.abs(o.idx-b.ii)>MAXD)return;if(cScore(oi,bi).s>=c.s+0.5)better=true;});
+    if(better||usedT.has(ti))return;bTitle[bi]=ti;usedT.add(ti);});
   if(paged){
     const pages=[...new Set(bodies.map(b=>page[b.ii]))];
     // 1º títulos de la misma página; 2º lo que sobra, con las páginas vecinas
     for(const pg of pages){
-      const bs=bodies.map((b,i)=>i).filter(i=>page[bodies[i].ii]===pg);
-      const ts=titles.map((t,i)=>i).filter(i=>page[titles[i].idx]===pg);
+      const bs=bodies.map((b,i)=>i).filter(i=>bTitle[i]<0&&page[bodies[i].ii]===pg);
+      const ts=titles.map((t,i)=>i).filter(i=>!usedT.has(i)&&page[titles[i].idx]===pg);
       bestMatch(bs,ts,()=>true);
     }
     for(const pg of pages){
@@ -430,7 +512,7 @@ function parseBook(rawLines,book,fileId){
     }
   }else{
     // sin páginas: grupos de recetas cercanas
-    for(let g=0;g<NB;g+=6){const bs=[];for(let i=g;i<Math.min(NB,g+6);i++)bs.push(i);
+    for(let g=0;g<NB;g+=6){const bs=[];for(let i=g;i<Math.min(NB,g+6);i++)if(bTitle[i]<0)bs.push(i);if(!bs.length)continue;
       const lo=bodies[bs[0]].ii-MAXD,hi=bodies[bs[bs.length-1]].ii+MAXD;
       const ts=titles.map((t,i)=>i).filter(i=>!usedT.has(i)&&titles[i].idx>=lo&&titles[i].idx<=hi);
       bestMatch(bs,ts,()=>false);}
@@ -440,16 +522,17 @@ function parseBook(rawLines,book,fileId){
     titles.forEach((t,ti)=>{if(usedT.has(ti))return;const d=Math.abs(t.idx-bodies[bi].ii);if(d>160)return;const c=cScore(ti,bi);
       if(c.hit>=1&&c.s>=0.5&&c.s-d/800>bs){bs=c.s-d/800;best=ti;}});
     if(best>=0){bTitle[bi]=best;usedT.add(best);}}
-  const fixCase=x=>isUpper(x)?cap(x.toLowerCase()):x;
+  const fixCase=x=>isUpper(x)?cap(x.toLowerCase()).replace(/([.!?:]\s+)(\p{Ll})/gu,(m,a,b)=>a+b.toUpperCase()):x;
   /* --- 4. armar recetas --- */
   let chapter="";const chapters=[];lines.forEach((l,k)=>{const m=l.match(CHAP);if(m)chapters.push({k,c:m[1].replace(/[^\p{L}\p{N} ,()\-–]/gu,"").trim()});});
   const recs=[];
   bodies.forEach((b,bi)=>{
     if(b.i.length<1||b.dup)return;
+    if(b.i.length<3&&!b.i.some(x=>/[\d½¼¾⅓⅔]/.test(x)))return;
     const t=bTitle[bi]>=0?titles[bTitle[bi]]:null;
     let name=t?niceTitle(t.text):"";
     if(!name){// sin título: nombre a partir del ingrediente principal
-      const main=b.i.map(x=>x.replace(/^[\d½¼¾\/.,\s]+(g|kg|ml|l|cdas?|cditas?|tazas?|unidades?|cucharadas?|cucharaditas?|latas?|filetes?|dientes?|trozos?|rebanadas?|hojas?)?\s*(de\s+)?/i,"").split(/[,(]/)[0].trim().split(" ").slice(0,2).join(" ")).filter(x=>x&&!/^(sal|pimienta|aceite|agua)\b/i.test(x)).slice(0,2);
+      const main=b.i.map(x=>x.replace(/^[\d½¼¾\/.,\s]+(g|kg|ml|l|cdas?|cditas?|tazas?|unidades?|cucharadas?|cucharaditas?|latas?|filetes?|dientes?|trozos?|rebanadas?|hojas?)?\s*(de\s+)?/i,"").split(/[,(]/)[0].trim().split(/\s+(?:en|de|del|con|a|al|para|sin|o|cortad[oa]s?|picad[oa]s?|rallad[oa]s?|cocid[oa]s?|fresc[oa]s?|maduros?|maduras?|grandes?|medianos?|medianas?|pequeñ[oa]s?)\b/i)[0].split(" ").slice(0,2).join(" ")).filter(x=>x&&!/^(sal|pimienta|aceite|agua)\b/i.test(x)).slice(0,2);
       name=cap(main.join(" y ").toLowerCase()||"Receta");
     }
     for(const c of chapters){if(c.k<b.ii)chapter=c.c;}
@@ -460,9 +543,11 @@ function parseBook(rawLines,book,fileId){
     const mm=src.match(/(\d{1,3})\s*(?:[–\-—]|a)\s*(\d{1,3})\s*min/i)||src.match(/(\d{1,3})\s*min/i);
     const m1=mm?+mm[1]:null,m2=mm&&mm[2]?+mm[2]:null;
     const allTxt=NORM([name,...b.i,...b.s,b.cocTxt].join(" "));
-    const usesFryer=!!temp||/airfryer|freidora|canasta|cesta/.test(allTxt);
+    const fryerWord=/airfryer|air fryer|freidora|canasta|cesta/.test(allTxt);
+    const oven=!fryerWord&&/\bhorno\b|hornear|hornea/.test(allTxt);
+    const usesFryer=fryerWord||(!!temp&&!oven);
     const r={id:fileId.slice(-6)+"-"+recs.length,n:name,ch:chapter,b:book,t:temp,m:m2||m1,mr:mm?(m2?`${m1}–${m2}`:`${m1}`):"",
-      i:b.i.map(fixCase),s:b.s.map(fixCase),tip:b.tip?cap(fixCase(b.tip)):"",warn:b.warn?cap(fixCase(b.warn)):"",res:b.res,por:b.por,nut:b.nut,fryer:usesFryer,
+      i:b.i.map(fixCase),s:b.s.map(fixCase),tip:b.tip?cap(fixCase(b.tip)):"",warn:b.warn?cap(fixCase(b.warn)):"",res:fixCase(b.res||""),por:fixCase(b.por||"").toLowerCase(),nut:fixCase(b.nut||""),fryer:usesFryer,oven:oven&&!!temp,
       flip:/(dar vuelta|d[aá]ndo(los|las|lo|la)? vuelta|voltea|gir[aá]|agit[aá]|a mitad de(l tiempo| cocci))/i.test(b.segTxt),
       q:t?(cs.n?Math.round(cs.s*100)/100:0.5):0};
     recs.push(r);
@@ -771,6 +856,9 @@ function pageText(tc,W){
       if(cur&&gap>Math.max(it.h*2.5,W*0.06)){segs.push(cur);cur=null;}
       if(!cur)cur={y:row.y,x0:it.x,x1:it.x+it.w,t:it.s};else{cur.t+=(gap>it.h*0.15&&!/\s$/.test(cur.t)&&!/^\s/.test(it.s)?" ":"")+it.s;cur.x1=it.x+it.w;}}
     if(cur)segs.push(cur);});
+  return layoutSegs(segs,W);
+}
+function layoutSegs(segs,W){
   const out=[];let L=[],Rr=[];const mid=W/2;
   const flush=()=>{out.push(...L.map(s=>s.t),...Rr.map(s=>s.t));L=[];Rr=[];};
   segs.forEach(s=>{const full=s.x0<mid*0.9&&s.x1>mid*1.1;if(full){flush();out.push(s.t);}else if(s.x0<mid)L.push(s);else Rr.push(s);});
@@ -783,23 +871,43 @@ async function ocrWorker(){if(OCRW)return OCRW;if(!window.Tesseract)await loadSc
 async function keepAwake(on){try{if(on&&navigator.wakeLock&&!WAKE)WAKE=await navigator.wakeLock.request("screen");if(!on&&WAKE){await WAKE.release();WAKE=null;}}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&BUSY){WAKE=null;keepAwake(true);}});
 const goodOcr=t=>{t=t.replace(/\s+/g," ").trim();if(t.length<2)return false;const n=(t.match(/[\p{L}\p{N}]/gu)||[]).length;return n/t.length>=0.55;};
+const OCRV=2;
+function ocrSegs(lines,W){const segs=[];
+  lines.sort((a,b)=>a.bbox.y0-b.bbox.y0).forEach(l=>{const h=Math.max(8,l.bbox.y1-l.bbox.y0);const ws=l.words.filter(x=>x.t&&x.t.trim()&&(x.c==null||x.c>=25)).sort((a,b)=>a.b.x0-b.b.x0);let cur=null;
+    for(const x of ws){const gap=cur?x.b.x0-cur.x1:0;if(cur&&gap>Math.max(h*1.6,W*0.035)){segs.push(cur);cur=null;}
+      if(!cur)cur={y:l.bbox.y0,x0:x.b.x0,x1:x.b.x1,t:x.t};else{cur.t+=" "+x.t;cur.x1=x.b.x1;}}
+    if(cur)segs.push(cur);});
+  return segs;}
+function ocrFix(x){x=String(x).replace(/\s+/g," ").trim();
+  x=x.replace(/^(?:[e*+•·o°®©«»>\-–—=~]\s+)(?=[\p{Lu}\d½¼¾])/u,"• ");
+  x=x.replace(/^[«»>=~|_]+\s*/,"");
+  x=x.replace(/(\d)(?=(tazas?|cucharadas?|cucharaditas?|cdas?|cditas?|gr?|kg|ml|l|unidades?|dientes?|huevos?|pizcas?)\b)/gi,"$1 ");
+  x=x.replace(/(\d)\s?[£%§](?=\s|$)/g,"$1 g");
+  x=x.replace(/(\d)\s?[*º°o]\s?C\b/g,"$1 °C").replace(/^(\d{1,2}),\s/,"$1. ");
+  x=x.replace(/\s+[|_~=»«—-]{1,3}\s*$/,"").replace(/\s{2,}/g," ");
+  return x.trim();}
 async function ocrPage(page){
   const v1=page.getViewport({scale:1});const sc=Math.min(2.5,1700/v1.width);const vp=page.getViewport({scale:sc});
   const c=document.createElement("canvas");c.width=Math.round(vp.width);c.height=Math.round(vp.height);const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
   await page.render({canvasContext:ctx,viewport:vp}).promise;const w=await ocrWorker();const {data}=await w.recognize(c);c.width=c.height=0;
-  const ls=(data.lines&&data.lines.length)?data.lines.filter(l=>l.confidence==null||l.confidence>=45).map(l=>l.text):String(data.text||"").split("\n");
-  return ls.map(x=>x.replace(/\s+/g," ").trim()).filter(goodOcr);
+  const H=c.height||vp.height;const W=vp.width;let ls;
+  const tl=(data.lines||[]).filter(l=>l.words&&l.words.length);
+  if(tl.length>=3){
+    // reconstruye la página por posición: cada renglón se corta donde hay un hueco grande (dos columnas) y se ordena por columna
+    ls=layoutSegs(ocrSegs(tl.map(l=>({bbox:l.bbox,words:l.words.map(x=>({t:x.text,c:x.confidence,b:x.bbox}))})),W),W);
+  }else ls=(data.lines&&data.lines.length)?data.lines.filter(l=>l.confidence==null||l.confidence>=45).map(l=>l.text):String(data.text||"").split("\n");
+  return ls.map(ocrFix).filter(goodOcr);
 }
 async function pdfLines(bytes,onp,key){
   if(!window.pdfjsLib)throw new Error("No se pudo cargar el lector de PDF. Revisá la conexión a internet y volvé a abrir la app.");
   const doc=await pdfjsLib.getDocument({data:bytes}).promise;const lines=[];
-  const saved=key?await IDB.ocrGet(key):null;const po=(saved&&saved.pages)||{};let ocrN=0;
+  const saved=key?await IDB.ocrGet(key):null;const po=(saved&&saved.v===OCRV&&saved.pages)||{};let ocrN=0;
   for(let p=1;p<=doc.numPages;p++){
     const page=await doc.getPage(p);const W=page.getViewport({scale:1}).width;const tc=await page.getTextContent();
     let pl=pageText(tc,W);lines.push("§PAGE "+p);
     if(pl.join("").replace(/\s/g,"").length<60){
       if(po[p]){pl=po[p];onp(p,doc.numPages,"ocr-cached");}
-      else{onp(p,doc.numPages,"ocr");await keepAwake(true);pl=await ocrPage(page);po[p]=pl;if(key)await IDB.ocrPut({key,pages:po});}
+      else{onp(p,doc.numPages,"ocr");await keepAwake(true);pl=await ocrPage(page);po[p]=pl;if(key)await IDB.ocrPut({key,v:OCRV,pages:po});}
       ocrN++;
     }else onp(p,doc.numPages,"text");
     lines.push(...pl);page.cleanup&&page.cleanup();
@@ -820,9 +928,9 @@ async function importBytes(fileId,title,bytes,mb){
   await keepAwake(false);
   const recs=finish(fileId,title,out.lines);
   if(!recs.length){BUSY=false;ST[fileId]={state:"err",msg:out.ocrN?"Leí las páginas pero no encontré recetas (no aparece la palabra «Ingredientes»).":"No encontré recetas en este PDF (no aparece la palabra «Ingredientes»)."};renderLibros();return;}
-  IMPORTED[fileId]=recs;NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==title);rebuild();
+  IMPORTED[fileId]=recs;{const bn=(BOOKS.find(b=>b.id===fileId)||{}).t;NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==title&&t!==bn);}if(ST[fileId])ST[fileId].reload=false;rebuild();
   const bk=BOOKS.find(b=>b.id===fileId)||{};
-  try{await IDB.put({fileId,title,name:title,file:bk.file||title,mb,lines:out.lines,pv:PARSER_VERSION,recipes:recs,savedAt:Date.now()});IDB.ocrDel(key);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  try{await IDB.put({fileId,title,name:title,file:bk.file||title,mb,lines:out.lines,pv:PARSER_VERSION,ocrN:out.ocrN,ocrv:OCRV,recipes:recs,savedAt:Date.now()});IDB.ocrDel(key);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
     ST[fileId]={state:"ok",n:recs.length};}
   catch(e){ST[fileId]={state:"ok",n:recs.length,msg:"Se cargó, pero no se pudo guardar en el celular (puede faltar espacio)."};}
   BUSY=false;renderLibros();render();toast(`${fmtN(recs.length)} recetas de «${title}»`);
@@ -833,7 +941,7 @@ function renderLibros(){
   const row=b=>{const st=ST[b.id]||{};
     if(S.renaming===b.id)return `<div class="book"><form class="bt rename" data-rename="${esc(b.id)}" style="flex:1;display:flex;gap:8px"><input id="rn" value="${esc(b.t)}" aria-label="Nombre del libro" maxlength="60" style="flex:1;min-width:0;height:42px;border-radius:10px;border:1.5px solid var(--basil);background:var(--bg);padding:0 10px"><button class="btn sm" type="submit">Guardar</button></form></div>`;
     return `<div class="book"><div class="bt" style="flex:1">
-      <b>${esc(b.t)}</b>${b.file&&bookName(b.file)!==b.file?`<small style="display:block">Archivo: ${esc(b.file)}</small>`:""}<small>${st.state==="ok"?`<span class="have">${fmtN(st.n)} recetas</span>${st.reload?` · <span style="color:var(--tomato)">volvé a cargarlo para corregir títulos</span>`:""}${st.msg?` · ${esc(st.msg)}`:""}`:st.state==="busy"?esc(st.msg):st.state==="err"?`<span style="color:var(--tomato)">${esc(st.msg)}</span>`:""}${b.mb?` · ${b.mb} MB`:""}</small>
+      <b>${esc(b.t)}</b>${b.file&&bookName(b.file)!==b.file?`<small style="display:block">Archivo: ${esc(b.file)}</small>`:""}<small>${st.state==="ok"?`<span class="have">${fmtN(st.n)} recetas</span>${st.reload?` · <span style="color:var(--tomato)">volvé a agregar este PDF para leerlo mejor</span>`:""}${st.msg?` · ${esc(st.msg)}`:""}`:st.state==="busy"?esc(st.msg):st.state==="err"?`<span style="color:var(--tomato)">${esc(st.msg)}</span>`:""}${b.mb?` · ${b.mb} MB`:""}</small>
       ${st.state==="busy"?`<div class="bar"><i style="width:${st.pct||2}%"></i></div>`:""}</div>
       ${st.state==="ok"||st.state==="err"?`<div style="display:flex;flex-direction:column;gap:6px">${st.state==="ok"?`<button class="btn ghost sm" data-renamebook="${esc(b.id)}">Renombrar</button>`:""}<button class="btn ghost sm" data-delbook="${esc(b.id)}">Quitar</button></div>`:""}</div>`;};
   $("#panel").innerHTML=`<div class="sheetbar"><button class="back" data-close>${IC.back}Volver</button></div>
@@ -857,6 +965,11 @@ async function loadSaved(){
     for(const x of rows){
       let recs=x.recipes||[];let reload=false;
       if(x.lines&&x.pv!==PARSER_VERSION){recs=finish(x.fileId,x.title,x.lines);IDB.put({...x,pv:PARSER_VERSION,recipes:recs}).catch(()=>{});}
+      if(x.lines){const pages=x.lines.filter(l=>/^§PAGE /.test(l)).length;const noSteps=recs.filter(r=>!(r.s&&r.s.length)).length;
+        const ocrOld=(x.ocrN>0||x.ocrN==null)&&x.ocrv!==OCRV;
+        const jt=n=>n.length<=3||/[»«|=<>~_\\]|—/.test(n)||n.split(/\s+/).filter(w=>w.length<=2&&!/^(de|la|el|y|o|a|en|al|un|con|e|u|mi|tu|su|lo|se|\d+)$/i.test(w)).length>=2;
+        const junkT=recs.filter(r=>jt(r.n||"")).length;
+        if(ocrOld&&((recs.length>=4&&(noSteps/recs.length>0.4||junkT/recs.length>0.12))||(pages>=10&&recs.length<pages/8)))reload=true;}
       else if(!x.lines){reload=true;recs.forEach(r=>{r.ch=r.ch||r.c||"";r.fryer=r.fryer??!!r.t;r.warn=r.warn||"";r.nut=r.nut||"";r.i=r.i||[];r.s=r.s||[];});}
       recs.forEach(r=>{r.fid=r.fid||x.fileId;r.tags=null;});
       IMPORTED[x.fileId]=recs;ST[x.fileId]={state:"ok",n:recs.length,reload};
