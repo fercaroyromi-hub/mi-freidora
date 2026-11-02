@@ -871,18 +871,33 @@ async function ocrWorker(){if(OCRW)return OCRW;if(!window.Tesseract)await loadSc
 async function keepAwake(on){try{if(on&&navigator.wakeLock&&!WAKE)WAKE=await navigator.wakeLock.request("screen");if(!on&&WAKE){await WAKE.release();WAKE=null;}}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&BUSY){WAKE=null;keepAwake(true);}});
 const goodOcr=t=>{t=t.replace(/\s+/g," ").trim();if(t.length<2)return false;const n=(t.match(/[\p{L}\p{N}]/gu)||[]).length;return n/t.length>=0.55;};
-const OCRV=2;
+const OCRV=3;
 function ocrSegs(lines,W){const segs=[];
-  lines.sort((a,b)=>a.bbox.y0-b.bbox.y0).forEach(l=>{const h=Math.max(8,l.bbox.y1-l.bbox.y0);const ws=l.words.filter(x=>x.t&&x.t.trim()&&(x.c==null||x.c>=25)).sort((a,b)=>a.b.x0-b.b.x0);let cur=null;
-    for(const x of ws){const gap=cur?x.b.x0-cur.x1:0;if(cur&&gap>Math.max(h*1.6,W*0.035)){segs.push(cur);cur=null;}
-      if(!cur)cur={y:l.bbox.y0,x0:x.b.x0,x1:x.b.x1,t:x.t};else{cur.t+=" "+x.t;cur.x1=x.b.x1;}}
+  lines.forEach(l=>{const ws=l.words.filter(x=>x.t&&x.t.trim()&&(x.c==null||x.c>=25)).sort((a,b)=>a.b.x0-b.b.x0);if(!ws.length)return;
+    const hs=ws.map(x=>x.b.y1-x.b.y0).sort((a,b)=>a-b);const hm=Math.max(8,hs[hs.length>>1]);let cur=null;
+    for(const x of ws){const gap=cur?x.b.x0-cur.x1:0;if(cur&&gap>Math.max(hm*1.2,W*0.025)){segs.push(cur);cur=null;}
+      if(!cur)cur={y:x.b.y0,x0:x.b.x0,x1:x.b.x1,t:x.t};else{cur.t+=" "+x.t;cur.x1=x.b.x1;cur.y=Math.min(cur.y,x.b.y0);}}
     if(cur)segs.push(cur);});
   return segs;}
+// busca el "pasillo" vertical vacío entre dos columnas
+function ocrGutter(segs,W){const B=4,n=Math.ceil(W/B)+1,cov=new Array(n).fill(0);
+  const body=segs.filter(s=>s.x1-s.x0<W*0.55);if(body.length<6)return null;
+  body.forEach(s=>{for(let k=Math.floor(s.x0/B);k<=Math.ceil(s.x1/B)&&k<n;k++)cov[k]++;});
+  const a=Math.floor(W*0.22/B),b=Math.ceil(W*0.78/B);let mn=Infinity;for(let k=a;k<=b;k++)mn=Math.min(mn,cov[k]);
+  if(mn>Math.max(1,body.length*0.04))return null;
+  let best=null,st=-1;for(let k=a;k<=b+1;k++){const ok=k<=b&&cov[k]<=mn;if(ok&&st<0)st=k;if(!ok&&st>=0){const len=k-st;if(!best||len>best.len)best={len,c:(st+k)/2*B};st=-1;}}
+  if(!best||best.len*B<W*0.012)return null;const g=best.c;
+  const L=body.filter(s=>s.x1<=g).length,R=body.filter(s=>s.x0>=g).length;return L>=3&&R>=3?g:null;}
+function ocrLayout(lines,W){const segs=ocrSegs(lines,W).sort((a,b)=>a.y-b.y);const g=ocrGutter(segs,W);
+  if(g==null)return segs.map(s=>s.t);
+  const out=[];let L=[],R=[];const flush=()=>{out.push(...L.map(s=>s.t),...R.map(s=>s.t));L=[];R=[];};
+  segs.forEach(s=>{if(s.x0<g&&s.x1>g){flush();out.push(s.t);}else if(s.x1<=g)L.push(s);else R.push(s);});flush();return out;}
 function ocrFix(x){x=String(x).replace(/\s+/g," ").trim();
   x=x.replace(/^(?:[e*+•·o°®©«»>\-–—=~]\s+)(?=[\p{Lu}\d½¼¾])/u,"• ");
   x=x.replace(/^[«»>=~|_]+\s*/,"");
   x=x.replace(/(\d)(?=(tazas?|cucharadas?|cucharaditas?|cdas?|cditas?|gr?|kg|ml|l|unidades?|dientes?|huevos?|pizcas?)\b)/gi,"$1 ");
   x=x.replace(/(\d)\s?[£%§](?=\s|$)/g,"$1 g");
+  x=x.replace(/^(\d+)(?=\p{Ll}{3,})/u,"$1 ").replace(/^[+»*e]{1,2}\s+(?=[\d½¼¾\p{Lu}])/u,"• ");
   x=x.replace(/(\d)\s?[*º°o]\s?C\b/g,"$1 °C").replace(/^(\d{1,2}),\s/,"$1. ");
   x=x.replace(/\s+[|_~=»«—-]{1,3}\s*$/,"").replace(/\s{2,}/g," ");
   return x.trim();}
@@ -894,7 +909,7 @@ async function ocrPage(page){
   const tl=(data.lines||[]).filter(l=>l.words&&l.words.length);
   if(tl.length>=3){
     // reconstruye la página por posición: cada renglón se corta donde hay un hueco grande (dos columnas) y se ordena por columna
-    ls=layoutSegs(ocrSegs(tl.map(l=>({bbox:l.bbox,words:l.words.map(x=>({t:x.text,c:x.confidence,b:x.bbox}))})),W),W);
+    ls=ocrLayout(tl.map(l=>({bbox:l.bbox,words:l.words.map(x=>({t:x.text,c:x.confidence,b:x.bbox}))})),W);
   }else ls=(data.lines&&data.lines.length)?data.lines.filter(l=>l.confidence==null||l.confidence>=45).map(l=>l.text):String(data.text||"").split("\n");
   return ls.map(ocrFix).filter(goodOcr);
 }
@@ -967,6 +982,7 @@ async function loadSaved(){
       if(x.lines&&x.pv!==PARSER_VERSION){recs=finish(x.fileId,x.title,x.lines);IDB.put({...x,pv:PARSER_VERSION,recipes:recs}).catch(()=>{});}
       if(x.lines){const pages=x.lines.filter(l=>/^§PAGE /.test(l)).length;const noSteps=recs.filter(r=>!(r.s&&r.s.length)).length;
         const ocrOld=(x.ocrN>0||x.ocrN==null)&&x.ocrv!==OCRV;
+        if(x.ocrN>0&&x.ocrv!==OCRV)reload=true;
         const jt=n=>n.length<=3||/[»«|=<>~_\\]|—/.test(n)||n.split(/\s+/).filter(w=>w.length<=2&&!/^(de|la|el|y|o|a|en|al|un|con|e|u|mi|tu|su|lo|se|\d+)$/i.test(w)).length>=2;
         const junkT=recs.filter(r=>jt(r.n||"")).length;
         if(ocrOld&&((recs.length>=4&&(noSteps/recs.length>0.4||junkT/recs.length>0.12))||(pages>=10&&recs.length<pages/8)))reload=true;}
