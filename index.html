@@ -262,7 +262,7 @@ if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudfl
    2) junta todos los títulos candidatos
    3) asigna cada título a la receta cuyos ingredientes y pasos coinciden con él
       (y si no hay coincidencia clara, por número y posición) */
-const PARSER_VERSION=3;
+const PARSER_VERSION=4;
 const NORM=x=>String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const H_ING=/^(ingredientes|lo que necesit[aá]s|vas a necesitar|necesit[aá]s)\b/i,
  H_PREP=/^(preparaci[oó]n|elaboraci[oó]n|paso a paso|pasos|procedimiento|instrucciones|modo de preparaci[oó]n|c[oó]mo se hace)\b/i,
@@ -304,7 +304,9 @@ function collect(lines,a,b,skip){
     const bullet=BUL.test(x)||/^\d{1,2}\s*[\.\)]\s*\S/.test(x);
     x=x.replace(BUL,"").replace(/^\d{1,2}\s*[\.\)]\s*/,"").trim();if(!x)continue;
     const prev=out[out.length-1];
-    if(prev&&!bullet&&/^[\p{Ll}(]/u.test(x)&&!/[:.!?)]$/.test(prev)&&prev.length>18)out[out.length-1]=prev+" "+x;
+    const dangling=prev&&/\b(de|del|con|y|e|en|para|a|al|o|u|la|el|los|las|sin|sobre|por|tipo|bien|muy|mas|más)$/i.test(prev);
+    const shortTail=prev&&!bullet&&!/^[\d½¼¾⅓⅔]/.test(x)&&x.split(" ").length<=2&&/^[\d½¼¾⅓⅔]/.test(prev)&&!/[:.!?)]$/.test(prev)&&!/^(sal|pimienta|aceite|or[eé]gano|agua|perejil|ajo|lim[oó]n|canela|comino|piment[oó]n|nuez moscada|stevia|miel)\b/i.test(x);
+    if(prev&&!bullet&&(dangling||shortTail||/^[\p{Ll}(]/u.test(x)&&!/[:.!?)]$/.test(prev)&&prev.length>18))out[out.length-1]=prev+" "+x;
     else out.push(x);
   }
   return out;
@@ -314,6 +316,7 @@ function textBlock(lines,a,b,head){return lines.slice(a,b).join(" ").replace(hea
 function parseBook(rawLines,book,fileId){
   const {lines,page}=cleanLines(rawLines);const paged=page.length&&page[page.length-1]>0;
   const N=lines.length;
+  const allCaps=lines.filter(l=>isUpper(l)).length/Math.max(1,lines.length)>0.45;
   const isStruct=l=>H_ING.test(l)||H_PREP.test(l)||H_TIP.test(l)||H_WARN.test(l)||H_POR.test(l)||H_NUTRI.test(l)||H_RES.test(l)||H_COC.test(l);
   const ingIdx=[];lines.forEach((l,k)=>{if(H_ING.test(l))ingIdx.push(k);});
   if(!ingIdx.length)return [];
@@ -340,8 +343,8 @@ function parseBook(rawLines,book,fileId){
     while(k>=lo&&(META.test(lines[k])||H_POR.test(lines[k])||H_NUTRI.test(lines[k])||/^\p{Ll}/u.test(lines[k])&&k>lo&&lines[k].length>0&&!isUpper(lines[k])&&false))k--;
     // salta descripción
     for(let d=ii-1;d>=Math.max(lo,ii-14);d--){if(H_DESC.test(lines[d])){k=d-1;break;}}
-    if(k>=lo&&!titleAt.has(k)&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!isStruct(lines[k])&&!inSteps(k)){
-      let s=k;while(s-1>=lo&&isUpper(lines[s])&&isUpper(lines[s-1])&&lines[s-1].length<45&&!META.test(lines[s-1])&&k-s<2)s--;
+    if(k>=lo&&!titleAt.has(k)&&lines[k].length<90&&!/[.,;]$/.test(lines[k])&&!isStruct(lines[k])&&(!inSteps(k)||(k===ii-1||META.test(lines[k+1]||""))&&!/^\s*\d{1,2}\s*[.)]/.test(lines[k])&&lines[k].length<70)){
+      let s=k;while(!allCaps&&s-1>=lo&&isUpper(lines[s])&&isUpper(lines[s-1])&&lines[s-1].length<45&&!META.test(lines[s-1])&&k-s<2)s--;
       const text=lines.slice(s,k+1).join(" ");
       titleAt.set(s,{idx:s,end:k,num:null,text,fallback:true});
     }});
@@ -437,6 +440,7 @@ function parseBook(rawLines,book,fileId){
     titles.forEach((t,ti)=>{if(usedT.has(ti))return;const d=Math.abs(t.idx-bodies[bi].ii);if(d>160)return;const c=cScore(ti,bi);
       if(c.hit>=1&&c.s>=0.5&&c.s-d/800>bs){bs=c.s-d/800;best=ti;}});
     if(best>=0){bTitle[bi]=best;usedT.add(best);}}
+  const fixCase=x=>isUpper(x)?cap(x.toLowerCase()):x;
   /* --- 4. armar recetas --- */
   let chapter="";const chapters=[];lines.forEach((l,k)=>{const m=l.match(CHAP);if(m)chapters.push({k,c:m[1].replace(/[^\p{L}\p{N} ,()\-–]/gu,"").trim()});});
   const recs=[];
@@ -458,7 +462,7 @@ function parseBook(rawLines,book,fileId){
     const allTxt=NORM([name,...b.i,...b.s,b.cocTxt].join(" "));
     const usesFryer=!!temp||/airfryer|freidora|canasta|cesta/.test(allTxt);
     const r={id:fileId.slice(-6)+"-"+recs.length,n:name,ch:chapter,b:book,t:temp,m:m2||m1,mr:mm?(m2?`${m1}–${m2}`:`${m1}`):"",
-      i:b.i,s:b.s,tip:b.tip?cap(b.tip):"",warn:b.warn?cap(b.warn):"",res:b.res,por:b.por,nut:b.nut,fryer:usesFryer,
+      i:b.i.map(fixCase),s:b.s.map(fixCase),tip:b.tip?cap(fixCase(b.tip)):"",warn:b.warn?cap(fixCase(b.warn)):"",res:b.res,por:b.por,nut:b.nut,fryer:usesFryer,
       flip:/(dar vuelta|d[aá]ndo(los|las|lo|la)? vuelta|voltea|gir[aá]|agit[aá]|a mitad de(l tiempo| cocci))/i.test(b.segTxt),
       q:t?(cs.n?Math.round(cs.s*100)/100:0.5):0};
     recs.push(r);
@@ -494,7 +498,7 @@ const CATS=[
  {k:"Legumbres y veggie",c:"#7A8B2E",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="9" cy="13" rx="5" ry="6.5" transform="rotate(-25 9 13)"/><path d="M15 6c3 1 5 4 4 8"/></svg>'},
  {k:"Snacks y aperitivos",c:"#B87A1C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 21 4 8h16l-2 13z"/><path d="M8 8 7 3M12 8V2.5M16 8l1-5"/></svg>'},
  {k:"Dulces y postres",c:"#B8577A",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 11h14l-1.5 9h-11z"/><path d="M5 11a4 4 0 0 1 4-4 3 3 0 0 1 6 0 4 4 0 0 1 4 4"/></svg>'},
- {k:"Salsas y dips",c:"#8B5E3C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/></svg>'},
+ {k:"Salsas y untables",c:"#8B5E3C",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/></svg>'},
  {k:"Bebidas y batidos",c:"#3E8C7A",i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 6h12l-1.5 15h-9z"/><path d="M14 6l2-4M6.5 11h11"/></svg>'}
 ];
 const CATBY=Object.fromEntries(CATS.map(c=>[c.k,c]));
@@ -511,7 +515,7 @@ function classify(r){
   const BREAK=/desayuno|merienda/;
   let c;
   if(has(/batido|smoothie|licuado|jugo|zumo|limonada|agua de|bebida|detox|infusion|te helado/,n)&&!r.fryer)c="Bebidas y batidos";
-  else if(has(/^(salsa|dip|aderezo|mayonesa|vinagreta|hummus|guacamole|chimichurri|pesto|crema de (ajo|palta|aguacate))\b/,n))c="Salsas y dips";
+  else if(has(/^(salsa|dip|aderezo|mayonesa|vinagreta|hummus|guacamole|chimichurri|pesto|pate|untable|crema de (ajo|palta|aguacate)|pasta de (huevo|atun|garbanzo|aceituna|mani|sesamo|berenjena|queso|palta|aguacate|zanahoria|morron))\b/,n))c="Salsas y untables";
   else if(has(SWEET,n))c=has(BREAK,ch)&&!has(/brownie|coulant|flan|cheesecake|tiramisu|helado|mousse/,n)?"Desayunos y meriendas":"Dulces y postres";
   else if(has(BREAK,ch)&&!has(FISH,n)&&!has(CHICK,n)&&!has(MEAT,n)||has(/tostada|avena|granola|pancake|panqueque|tortita|waffle|gofre|yogur|medialuna|scone|croissant|porridge|bagel/,n)&&!has(FISH,n)&&!has(CHICK,n))c="Desayunos y meriendas";
   else if(has(FISH,n))c="Pescados y mariscos";
@@ -725,11 +729,12 @@ function openRecipe(id){
     <button class="fav" style="position:static" data-fav="${esc(r.id)}" aria-pressed="${isFav(r.id)}" aria-label="${isFav(r.id)?"Quitar de favoritas":"Guardar en favoritas"}">${IC.heart}</button></div>
     <div style="display:flex;gap:12px;align-items:center">${icTile(r.c)}<p class="eyebrow">${esc(r.c)}${r.v==="m"?" · apta para vianda":r.v==="s"?" · colación":""}</p></div>
     <h1 class="h1" style="margin-top:10px">${esc(r.n)}</h1>
-    <div class="stats">
+    ${!r.fryer&&!r.t&&!r.m?`<div class="box tip" style="margin:16px 0"><b>Sin freidora</b>Esta receta no lleva freidora: se prepara en frío o con otro método. Está en el libro como acompañamiento o preparación base.</div>${r.por?`<p class="meta-line">Porción: ${esc(por)}</p>`:""}`:`    <div class="stats">
       <div class="stat ${r.t?"":"off"}"><b class="num">${r.t?r.t+"°":r.fryer?"—":"No usa"}</b><span>${r.t||r.fryer?"temperatura":"freidora"}</span></div>
       <div class="stat ${r.m?"":"off"}"><b class="num">${r.m?esc(r.mr||r.m):"—"}</b><span>minutos</span></div>
       <div class="stat ${por?"":"off"}"><b style="font-size:${por.length>12?"1rem":"1.45rem"}">${por?esc(por):"—"}</b><span>porción</span></div>
     </div>
+`}
     ${r.m?`<button class="btn heat" style="width:100%" data-timer="${esc(r.id)}">${IC.play}Empezar temporizador · ${r.m} min</button>
     ${r.fryer?`<p class="meta-line" style="margin-top:8px;text-align:center">Precalentá la freidora 3 a 5 minutos antes.</p>`:""}`:""}
     <div class="section" style="margin-top:22px"><h2 class="h2">Ingredientes</h2><ul class="ing">${ingHTML}</ul></div>

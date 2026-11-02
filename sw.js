@@ -1,5 +1,5 @@
 // Mi Freidora: guarda la app para usarla sin internet.
-const CACHE = "mi-freidora-v4";
+const CACHE = "mi-freidora-v5";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"];
