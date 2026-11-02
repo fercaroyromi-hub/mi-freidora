@@ -540,10 +540,27 @@ function classify(r){
   return r;
 }
 
+/* ============ nombres de libros claros ============ */
+function bookName(raw){
+  let x=String(raw||"").replace(/\.pdf$/i,"").replace(/^[a-z]_/i,"").replace(/[_]+/g," ").replace(/\s*\(\d+\)\s*$/,"");
+  x=x.replace(/\s*\+\s*bonus\b/i,"").replace(/\bbonus regalo\b/i,"").replace(/\bregalo\b/i,"").replace(/#\s*(\d+)/g,"$1");
+  x=x.replace(/(\w)-(?=\w)/g,"$1 ");
+  const ROM={I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
+  let parte="";x=x.replace(/\bparte\s+([IVX]+|\d+)\b\s*[-–:.]?\s*/i,(m,n)=>{parte=" · Parte "+(ROM[n.toUpperCase()]||n);return "";});
+  x=x.replace(/[.,;:]?\s*para (tu |la )?freidora( de aire)?\s*$/i,"").replace(/[.\s\-–]+$/,"").replace(/\s+/g," ").trim();
+  const L=(x.match(/\p{L}/gu)||[]);const upper=L.length&&L.filter(c=>c===c.toUpperCase()).length/L.length>0.7;
+  if(upper){const small=new Set(["de","del","y","e","para","con","en","la","el","los","las","sin","pero","es","a","al","o","por"]);
+    x=x.toLowerCase().split(" ").map((w,i)=>i>0&&small.has(w)?w:(/^(airfryer|uruguay|uruguayas?)$/.test(w)?w[0].toUpperCase()+w.slice(1):w[0]?w[0].toUpperCase()+w.slice(1):w)).join(" ");}
+  else x=x.charAt(0).toUpperCase()+x.slice(1);
+  x=x.replace(/\bazucar\b/gi,m=>m[0]==="A"?"Azúcar":"azúcar").replace(/\bninos\b/gi,m=>m[0]==="N"?"Niños":"niños");
+  return (x||"Libro sin nombre")+parte;
+}
+
 /* ============ estado ============ */
 const store={get(k,d){try{const v=localStorage.getItem("mf2_"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("mf2_"+k,JSON.stringify(v))}catch(e){}}};
-const S={tab:"inicio",q:"",cat:null,fv:false,fq:false,limit:36,have:store.get("have",[]),favs:store.get("favs",[]),week:store.get("week",null),shop:store.get("shop",{}),sheet:null};
+const S={lastBackup:null,renaming:null,tab:"inicio",q:"",cat:null,fv:false,fq:false,limit:36,have:store.get("have",[]),favs:store.get("favs",[]),week:store.get("week",null),shop:store.get("shop",{}),sheet:null};
 let R=[],BYID={},IMPORTED={},BOOKS=[],ST={},BUSY=false,NEEDS_RELOAD=[];
+S.lastBackup=store.get("lastBackup",null);
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const isFav=id=>S.favs.includes(id);
@@ -553,7 +570,9 @@ function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTi
 const slug=x=>NORM(x).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48);
 function rebuild(){
   const all=[];const seen=new Map();
+  const nameOf=Object.fromEntries(BOOKS.map(b=>[b.id,b.t]));
   Object.entries(IMPORTED).forEach(([fid,list])=>list.forEach(r=>{
+    if(nameOf[fid])r.b=nameOf[fid];
     classify(r);
     const key=slug(r.n)+"|"+slug((r.i[0]||"")).slice(0,16);
     const prev=seen.get(key);
@@ -797,7 +816,8 @@ async function importBytes(fileId,title,bytes,mb){
   const recs=finish(fileId,title,out.lines);
   if(!recs.length){BUSY=false;ST[fileId]={state:"err",msg:out.ocrN?"Leí las páginas pero no encontré recetas (no aparece la palabra «Ingredientes»).":"No encontré recetas en este PDF (no aparece la palabra «Ingredientes»)."};renderLibros();return;}
   IMPORTED[fileId]=recs;NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==title);rebuild();
-  try{await IDB.put({fileId,title,mb,lines:out.lines,pv:PARSER_VERSION,recipes:recs,savedAt:Date.now()});IDB.ocrDel(key);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  const bk=BOOKS.find(b=>b.id===fileId)||{};
+  try{await IDB.put({fileId,title,name:title,file:bk.file||title,mb,lines:out.lines,pv:PARSER_VERSION,recipes:recs,savedAt:Date.now()});IDB.ocrDel(key);try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
     ST[fileId]={state:"ok",n:recs.length};}
   catch(e){ST[fileId]={state:"ok",n:recs.length,msg:"Se cargó, pero no se pudo guardar en el celular (puede faltar espacio)."};}
   BUSY=false;renderLibros();render();toast(`${fmtN(recs.length)} recetas de «${title}»`);
@@ -805,10 +825,12 @@ async function importBytes(fileId,title,bytes,mb){
 function renderLibros(){
   if(S.sheet!=="libros")return;
   const total=Object.values(IMPORTED).reduce((a,x)=>a+x.length,0);
-  const row=b=>{const st=ST[b.id]||{};return `<div class="book"><div class="bt" style="flex:1">
-      <b>${esc(b.t)}</b><small>${st.state==="ok"?`<span class="have">${fmtN(st.n)} recetas</span>${st.reload?` · <span style="color:var(--tomato)">volvé a cargarlo para corregir títulos</span>`:""}${st.msg?` · ${esc(st.msg)}`:""}`:st.state==="busy"?esc(st.msg):st.state==="err"?`<span style="color:var(--tomato)">${esc(st.msg)}</span>`:""}${b.mb?` · ${b.mb} MB`:""}</small>
+  const row=b=>{const st=ST[b.id]||{};
+    if(S.renaming===b.id)return `<div class="book"><form class="bt rename" data-rename="${esc(b.id)}" style="flex:1;display:flex;gap:8px"><input id="rn" value="${esc(b.t)}" aria-label="Nombre del libro" maxlength="60" style="flex:1;min-width:0;height:42px;border-radius:10px;border:1.5px solid var(--basil);background:var(--bg);padding:0 10px"><button class="btn sm" type="submit">Guardar</button></form></div>`;
+    return `<div class="book"><div class="bt" style="flex:1">
+      <b>${esc(b.t)}</b>${b.file&&bookName(b.file)!==b.file?`<small style="display:block">Archivo: ${esc(b.file)}</small>`:""}<small>${st.state==="ok"?`<span class="have">${fmtN(st.n)} recetas</span>${st.reload?` · <span style="color:var(--tomato)">volvé a cargarlo para corregir títulos</span>`:""}${st.msg?` · ${esc(st.msg)}`:""}`:st.state==="busy"?esc(st.msg):st.state==="err"?`<span style="color:var(--tomato)">${esc(st.msg)}</span>`:""}${b.mb?` · ${b.mb} MB`:""}</small>
       ${st.state==="busy"?`<div class="bar"><i style="width:${st.pct||2}%"></i></div>`:""}</div>
-      ${st.state==="ok"||st.state==="err"?`<button class="btn ghost sm" data-delbook="${esc(b.id)}">Quitar</button>`:""}</div>`;};
+      ${st.state==="ok"||st.state==="err"?`<div style="display:flex;flex-direction:column;gap:6px">${st.state==="ok"?`<button class="btn ghost sm" data-renamebook="${esc(b.id)}">Renombrar</button>`:""}<button class="btn ghost sm" data-delbook="${esc(b.id)}">Quitar</button></div>`:""}</div>`;};
   $("#panel").innerHTML=`<div class="sheetbar"><button class="back" data-close>${IC.back}Volver</button></div>
     <h1 class="h1">Mis libros</h1>
     <p class="lead">Elegí los PDF de recetas: en el selector del teléfono podés entrar a Google Drive o a Descargas. La app lee cada libro completo, ordena título, ingredientes y pasos, y comprueba que el título coincida con la receta. Todo queda guardado en este celular y funciona sin internet.</p>
@@ -816,6 +838,12 @@ function renderLibros(){
     <input type="file" id="pick" accept="application/pdf" multiple hidden>
     <p class="eyebrow num" style="margin:18px 0 10px">${total?`${fmtN(R.length)} recetas únicas de ${BOOKS.length} ${BOOKS.length===1?"libro":"libros"}`:"Todavía no cargaste ningún libro"}</p>
     <div style="display:grid;gap:8px">${BOOKS.map(row).join("")}</div>
+    <div class="section"><h2 class="h2">Copia de respaldo</h2>
+      <p class="lead">Guardá todas tus recetas, favoritas y la semana de viandas en un archivo (por ejemplo en tu Google Drive). En otro celular, tocá «Cargar copia», elegí ese archivo y aparece todo en segundos, sin volver a leer los libros.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" data-backup ${R.length?"":"disabled"}>Guardar copia</button><label class="btn ghost" for="restore">Cargar copia</label></div>
+      <input type="file" id="restore" accept=".json,application/json" hidden>
+      ${S.lastBackup?`<p class="meta-line">Última copia: ${esc(S.lastBackup)}</p>`:""}
+    </div>
     <p class="meta-line" style="margin-top:18px">Los libros escaneados o hechos con imágenes también se pueden cargar: la app lee el texto de cada página (tarda unos segundos por página y la primera vez necesita internet). Si se corta, elegí el mismo PDF otra vez y sigue donde quedó.</p>`;
 }
 function openLibros(){S.sheet="libros";$("#sheet").hidden=false;renderLibros();$("#panel").scrollTop=0;if(!(history.state&&history.state.sheet))history.pushState({sheet:1},"","#libros");}
@@ -827,11 +855,43 @@ async function loadSaved(){
       else if(!x.lines){reload=true;recs.forEach(r=>{r.ch=r.ch||r.c||"";r.fryer=r.fryer??!!r.t;r.warn=r.warn||"";r.nut=r.nut||"";r.i=r.i||[];r.s=r.s||[];});}
       recs.forEach(r=>{r.fid=r.fid||x.fileId;r.tags=null;});
       IMPORTED[x.fileId]=recs;ST[x.fileId]={state:"ok",n:recs.length,reload};
-      if(reload)NEEDS_RELOAD.push(x.title);
-      if(!BOOKS.some(b=>b.id===x.fileId))BOOKS.push({id:x.fileId,t:x.title,mb:x.mb});
+      if(reload)NEEDS_RELOAD.push(x.name||bookName(x.title));
+      const nm=x.name||bookName(x.title);recs.forEach(r=>r.b=nm);
+      if(!BOOKS.some(b=>b.id===x.fileId))BOOKS.push({id:x.fileId,t:nm,file:x.file||x.title,mb:x.mb});
     }
     rebuild();render();renderLibros();
   }catch(e){toast("No se pudieron leer los libros guardados en este celular.");render();}
+}
+
+/* ============ copia de respaldo ============ */
+async function makeBackup(){
+  const rows=await IDB.all();
+  const data={app:"mi-freidora",version:1,fecha:new Date().toISOString(),libros:rows.map(x=>({...x,name:(BOOKS.find(b=>b.id===x.fileId)||{}).t||x.name})),favs:S.favs,week:S.week,have:S.have,shop:S.shop};
+  const d=new Date();const fname=`mi-freidora-copia-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
+  const file=new File([JSON.stringify(data)],fname,{type:"application/json"});
+  S.lastBackup=`${d.toLocaleDateString("es-UY")} · ${rows.length} ${rows.length===1?"libro":"libros"} · ${fmtN(R.length)} recetas`;store.set("lastBackup",S.lastBackup);
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Copia de Mi Freidora",text:"Copia de respaldo de mis recetas"});toast("Copia lista. Si elegiste Drive, ya quedó guardada.");renderLibros();return;}}
+  catch(e){if(e&&e.name==="AbortError"){toast("No se guardó la copia");return;}}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+  toast("Copia descargada en el celular (carpeta Descargas)");renderLibros();
+}
+async function restoreBackup(f){
+  let data;try{data=JSON.parse(await f.text());}catch(e){toast("Ese archivo no es una copia de Mi Freidora");return;}
+  if(!data||data.app!=="mi-freidora"||!Array.isArray(data.libros)){toast("Ese archivo no es una copia de Mi Freidora");return;}
+  let n=0;
+  for(const x of data.libros){if(!x||!x.fileId)continue;await IDB.put(x).catch(()=>{});n++;}
+  if(Array.isArray(data.favs)){S.favs=[...new Set([...S.favs,...data.favs])];store.set("favs",S.favs);}
+  if(data.week&&!S.week){S.week=data.week;store.set("week",S.week);}
+  if(Array.isArray(data.have)&&!S.have.length){S.have=data.have;store.set("have",S.have);}
+  IMPORTED={};BOOKS=[];ST={};NEEDS_RELOAD=[];await loadSaved();
+  toast(`Listo: ${n} ${n===1?"libro":"libros"} y ${fmtN(R.length)} recetas cargadas`);
+}
+async function renameBook(id,name){
+  name=String(name||"").replace(/\s+/g," ").trim().slice(0,60);S.renaming=null;
+  const b=BOOKS.find(x=>x.id===id);if(!b||!name){renderLibros();return;}
+  b.t=name;(IMPORTED[id]||[]).forEach(r=>r.b=name);
+  try{const rows=await IDB.all();const x=rows.find(r=>r.fileId===id);if(x)await IDB.put({...x,name});}catch(e){}
+  rebuild();renderLibros();toast("Nombre guardado");
 }
 
 /* ============ temporizador ============ */
@@ -860,7 +920,7 @@ function render(){
 }
 function go(tab){S.tab=tab;S.limit=36;render();scrollTo({top:0});if(location.hash!=="#"+tab)history.replaceState(history.state,"","#"+tab);}
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-fav],[data-open],[data-tab],[data-cat],[data-flag],[data-have],[data-clear],[data-newweek],[data-swap],[data-close],[data-timer],[data-stop],[data-libros],[data-delbook],[data-more],[data-quick],.steps li");
+  const t=e.target.closest("[data-fav],[data-open],[data-tab],[data-cat],[data-flag],[data-have],[data-clear],[data-newweek],[data-swap],[data-close],[data-timer],[data-stop],[data-libros],[data-delbook],[data-more],[data-quick],[data-backup],[data-renamebook],.steps li");
   if(!t)return;const d=t.dataset;
   if(t.matches(".steps li")){t.classList.toggle("done");return;}
   if(d.fav){e.stopPropagation();const id=d.fav;S.favs=isFav(id)?S.favs.filter(x=>x!==id):[...S.favs,id];store.set("favs",S.favs);
@@ -879,6 +939,8 @@ document.addEventListener("click",e=>{
   if(d.timer){startTimer(d.timer);return;}
   if("stop" in d){stopTimer();return;}
   if("libros" in d){openLibros();return;}
+  if("backup" in d){makeBackup();return;}
+  if(d.renamebook){S.renaming=d.renamebook;renderLibros();setTimeout(()=>{const i=$("#rn");if(i){i.focus();i.select();}},0);return;}
   if(d.delbook){const id=d.delbook;IDB.del(id).catch(()=>{});const b=BOOKS.find(x=>x.id===id);delete IMPORTED[id];delete ST[id];BOOKS=BOOKS.filter(x=>x.id!==id);if(b)NEEDS_RELOAD=NEEDS_RELOAD.filter(t=>t!==b.t);rebuild();renderLibros();return;}
   if("more" in d){S.limit+=36;if(S.tab==="recetas")$("#rlist").innerHTML=listHTML();else{const y=scrollY;render();scrollTo({top:y});}return;}
 });
@@ -889,12 +951,14 @@ document.addEventListener("keydown",e=>{
 });
 let qT=null;
 document.addEventListener("input",e=>{if(e.target.id==="q"){S.q=e.target.value;S.limit=36;clearTimeout(qT);qT=setTimeout(()=>{$("#rlist").innerHTML=listHTML();},120);}});
+document.addEventListener("submit",e=>{const f=e.target.closest("[data-rename]");if(f){e.preventDefault();renameBook(f.dataset.rename,$("#rn").value);}});
 document.addEventListener("change",async e=>{
   const el=e.target;
+  if(el.id==="restore"){const f=el.files[0];el.value="";if(f)restoreBackup(f);return;}
   if(el.dataset&&el.dataset.shop!==undefined){const k=el.dataset.shop;if(el.checked)S.shop[k]=1;else delete S.shop[k];store.set("shop",S.shop);el.nextElementSibling.className=el.checked?"done":"";return;}
   if(el.id==="pick"){const files=[...el.files];el.value="";
-    for(const f of files){const id="local-"+slug(f.name).slice(0,60);const title=f.name.replace(/\.pdf$/i,"");const mb=+(f.size/1048576).toFixed(1);
-      if(!BOOKS.some(b=>b.id===id))BOOKS.push({id,t:title,mb});
+    for(const f of files){const id="local-"+NORM(f.name).replace(/[^a-z0-9]+/g," ").trim().replace(/ /g,"-").slice(0,60);const prev=BOOKS.find(b=>b.id===id);const title=prev?prev.t:bookName(f.name);const mb=+(f.size/1048576).toFixed(1);
+      if(!prev)BOOKS.push({id,t:title,file:f.name,mb});
       try{await importBytes(id,title,new Uint8Array(await f.arrayBuffer()),mb);}catch(err){BUSY=false;ST[id]={state:"err",msg:"No se pudo leer este PDF."};renderLibros();}}
   }
 });
